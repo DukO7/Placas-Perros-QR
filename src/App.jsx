@@ -3,7 +3,10 @@ import axios from 'axios'
 import ScanView from './ScanView'
 import DashboardView from './DashboardView'
 
-// 🔗 1. Cambiamos la IP local por tu URL de Render
+// --- 1. IMPORTACIONES DE ALERTAS ---
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 const API_BASE = 'https://api-qrplacas.onrender.com/api/mascotas';
 
 function App() {
@@ -11,80 +14,93 @@ function App() {
   const [seleccionada, setSeleccionada] = useState(null);
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
 
+  // --- 2. FUNCIÓN GLOBAL DE NOTIFICACIÓN ---
+  const notify = (msg, type = "success") => {
+    toast[type](msg, {
+      position: "top-right",
+      autoClose: 4000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      theme: "colored",
+      style: { borderRadius: '12px', fontWeight: '600' }
+    });
+  };
+
   useEffect(() => {
     fetchMascotas();
   }, []);
 
-  // --- 🔄 CARGAR DATOS ---
   const fetchMascotas = async () => {
     try {
       const response = await axios.get(API_BASE);
-      // PostgreSQL devuelve los datos en el mismo formato, así que response.data funciona igual
       setMascotas(response.data);
     } catch (error) {
       console.error("Error cargando mascotas:", error);
+      notify("Error al conectar con la base de datos", "error");
     }
   };
 
-  // --- ➕ AGREGAR MASCOTA ---
   const agregarMascota = async (nueva) => {
     try {
       const response = await axios.post(API_BASE, nueva);
-      // El backend ahora devuelve el nuevo ID generado por Postgres
       setMascotas([...mascotas, response.data]);
+      notify(`✨ ${nueva.nombre} registrado con éxito`);
     } catch (error) {
       console.error("Error al registrar:", error);
+      notify("Error al crear el registro", "error");
     }
   };
 
-  // --- 🗑️ ELIMINAR MASCOTA ---
   const eliminarMascota = async (id) => {
     if (window.confirm("¿Estás seguro de eliminar a esta mascota?")) {
       try {
         await axios.delete(`${API_BASE}/${id}`);
         setMascotas(mascotas.filter(m => m.id !== id));
-        alert("Mascota eliminada correctamente");
+        notify("Registro eliminado correctamente", "info");
       } catch (error) {
         console.error("Error al eliminar:", error);
+        notify("No se pudo eliminar el registro", "error");
       }
     }
   };
 
-  // --- ✅ MARCAR COMO IMPRESO ---
   const marcarComoImpreso = async (id) => {
     try {
-      // Usamos la constante API_BASE para que pegue en Render
       await axios.patch(`${API_BASE}/${id}/impreso`);
-      
-      setMascotas(mascotas.map(m => 
-        m.id === id ? { ...m, impreso: 1 } : m
-      ));
+      setMascotas(mascotas.map(m => m.id === id ? { ...m, impreso: 1 } : m));
+      notify("✅ Placa confirmada para producción");
     } catch (error) {
       console.error("Error al actualizar impresión:", error);
+      notify("Error al actualizar impresión", "error");
     }
   };
 
-  // --- 📍 ACTUALIZAR ESTADO (CORREGIDO) ---
   const actualizarEstado = async (id, nuevoEstado, motivo) => {
     try {
-      // 🚀 ELIMINAMOS LAS IPS LOCALES AQUÍ TAMBIÉN
-      const respuesta = await axios.patch(`${API_BASE}/${id}/estado`, { 
+      await axios.patch(`${API_BASE}/${id}/estado`, { 
         estado: nuevoEstado, 
         motivo: motivo 
       });
-      
-      console.log("Respuesta del servidor:", respuesta.data);
 
       setMascotas(prev => prev.map(m => m.id === id ? { ...m, estado: nuevoEstado } : m));
       setSeleccionada(prev => (prev && prev.id === id ? { ...prev, estado: nuevoEstado } : prev));
+      
+      // Alerta dinámica según el estado
+      if (nuevoEstado === 'perdido') {
+        notify(`🚨 REPORTE: Mascota marcada como PERDIDA`, "error");
+      } else {
+        notify(`🚀 Estado actualizado a: ${nuevoEstado.toUpperCase()}`, "info");
+      }
 
     } catch (error) {
       console.error("Error en la petición PATCH:", error);
+      notify("Error al cambiar estado", "error");
       throw error; 
     }
   };
 
-  // --- LÓGICA DE CONTEO Y SVG (Se mantiene igual) ---
   const contar = (estado) => mascotas.filter(m => m.estado === estado).length;
 
   const descargarSVG = (nombre) => {
@@ -112,6 +128,7 @@ function App() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    notify("🎨 Archivo SVG listo para impresión 3D");
   };
 
   useEffect(() => {
@@ -120,24 +137,27 @@ function App() {
     return () => window.removeEventListener('popstate', handleLocationChange);
   }, []);
 
-  // --- RENDERIZADO ---
   if (currentPath.startsWith('/scan/')) {
-    // IMPORTANTE: Aquí pasamos la lista de mascotas para que ScanView intente buscar localmente antes de pedir al servidor
     return <ScanView mascotas={mascotas} />;
   }
 
   return (
-    <DashboardView 
-      mascotas={mascotas}
-      contar={contar}
-      seleccionada={seleccionada}
-      setSeleccionada={setSeleccionada}
-      descargarSVG={descargarSVG}
-      agregarMascota={agregarMascota}
-      eliminarMascota={eliminarMascota}
-      marcarComoImpreso={marcarComoImpreso}
-      actualizarEstado={actualizarEstado}
-    />
+    <>
+      {/* --- 3. CONTENEDOR DE ALERTAS (MAX 5) --- */}
+      <ToastContainer limit={5} newestOnTop />
+
+      <DashboardView 
+        mascotas={mascotas}
+        contar={contar}
+        seleccionada={seleccionada}
+        setSeleccionada={setSeleccionada}
+        descargarSVG={descargarSVG}
+        agregarMascota={agregarMascota}
+        eliminarMascota={eliminarMascota}
+        marcarComoImpreso={marcarComoImpreso}
+        actualizarEstado={actualizarEstado}
+      />
+    </>
   );
 }
 
