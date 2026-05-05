@@ -91,11 +91,33 @@ const DashboardView = (props) => {
 const navItemStyle = (activo) => ({ padding: '12px 15px', backgroundColor: activo ? '#334155' : 'transparent', color: activo ? 'white' : '#94a3b8', borderRadius: '10px', cursor: 'pointer', fontWeight: activo ? '600' : '400' });
 const badgeStyle = (estado) => ({ fontSize: '9px', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold', textTransform: 'uppercase', backgroundColor: estado === 'perdido' ? '#fee2e2' : '#dcfce7', color: estado === 'perdido' ? '#dc2626' : '#16a34a' });
 const styles = {
-  layout: { display: 'flex', minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'system-ui, sans-serif' },
-  sidebar: { width: '260px', backgroundColor: '#1e293b', color: 'white', padding: '30px 20px' },
+    layout: { 
+        display: 'flex', 
+        flexDirection: window.innerWidth < 768 ? 'column' : 'row', // Apilar en móvil
+        minHeight: '100vh', 
+        backgroundColor: '#f8fafc', 
+        fontFamily: 'system-ui, sans-serif' 
+    },
+    sidebar: { 
+        width: window.innerWidth < 768 ? '100%' : '260px', // Ancho completo en móvil
+        boxSizing: 'border-box',
+        backgroundColor: '#1e293b', 
+        color: 'white', 
+        padding: '20px' 
+    },
   logoArea: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '40px' },
-  mainContent: { flex: 1, padding: '40px', overflowY: 'auto' },
-  kpiGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '40px' },
+  mainContent: { 
+    flex: 1, 
+    padding: window.innerWidth < 768 ? '20px' : '40px', // Menos margen en móvil
+    overflowY: 'auto' 
+},
+kpiGrid: { 
+    display: 'grid', 
+    // auto-fit ajusta las columnas automáticamente según el espacio disponible
+    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', 
+    gap: '15px', 
+    marginBottom: '30px' 
+}, kpiGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '40px' },
   card: { backgroundColor: 'white', padding: '30px', borderRadius: '24px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' },
   cardTitle: { marginTop: 0, marginBottom: '25px', fontSize: '17px', color: '#1e293b', fontWeight: '700' },
   chartContainer: { display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around', height: '220px' },
@@ -115,11 +137,24 @@ const KPICard = ({ title, count, icon, color = '#1e293b' }) => (
 );
 
 const Bar = ({ height, color, label, count }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%', width: '70px' }}>
-    <span style={{ fontSize: '11px', fontWeight: 'bold', color: color, marginBottom: '5px' }}>{count}</span>
-    <div style={{ width: '35px', height: `${(height * 180) / 100}px`, backgroundColor: color, borderRadius: '5px 5px 0 0' }}></div>
-    <span style={{ fontSize: '10px', fontWeight: '600', color: '#64748b', marginTop: '8px' }}>{label}</span>
-  </div>
-);
+    <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        justifyContent: 'flex-end', 
+        height: '100%', 
+        flex: 1, // Usa el espacio disponible en lugar de width fijo
+        minWidth: '40px' 
+    }}>
+      <span style={{ fontSize: '10px', fontWeight: 'bold', color: color }}>{count}</span>
+      <div style={{ 
+          width: '80%', // Proporcional al contenedor
+          height: `${(height * 150) / 100}px`, // Un poco más bajo para móvil
+          backgroundColor: color, 
+          borderRadius: '5px 5px 0 0' 
+      }}></div>
+      <span style={{ fontSize: '9px', textAlign: 'center', marginTop: '5px' }}>{label}</span>
+    </div>
+  );
 
 export default DashboardView;
