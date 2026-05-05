@@ -13,7 +13,7 @@ const ScanView = ({ mascotas }) => {
 
     // 🔗 CONFIGURACIÓN DE URL: 
     // Cambia esto a tu URL actual de ngrok (la que apunta al puerto 3000 de tu servidor)
-    const API_BASE = "https://cc67-189-203-28-126.ngrok-free.app";
+    const API_BASE = "https://api-qrplacas.onrender.com";
 
     // 2. Efecto para cargar los datos del perro apenas se abre la página
     useEffect(() => {

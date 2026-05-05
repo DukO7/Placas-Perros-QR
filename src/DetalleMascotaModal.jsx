@@ -27,7 +27,7 @@ const DetalleMascotaModal = ({
 
   const cargarHistorial = async () => {
     try {
-      const res = await axios.get(`http://192.168.100.68:3000/api/historial/${seleccionada.id}`);
+      const res = await axios.get(`https://api-qrplacas.onrender.com/api/historial/${seleccionada.id}`);
       setEventos(res.data);
     } catch (error) {
       console.error("Error al cargar historial:", error);
@@ -52,7 +52,7 @@ const confirmarCambio = async () => {
       
       // 2. ⚡ LLAMADA INDEPENDIENTE AL HISTORIAL
       console.log("Enviando petición de historial...");
-      const resHistorial = await axios.post('http://192.168.100.68:3000/api/historial', {
+      const resHistorial = await axios.post('https://api-qrplacas.onrender.com/api/historial', {
           mascota_id: seleccionada.id,
           evento: "Actualización de Estado",
           detalle: motivoTexto || `Cambio de estado a ${estadoTemporal}`
@@ -136,7 +136,7 @@ const confirmarCambio = async () => {
               {!seleccionada.impreso ? (
                 <div style={styles.produccionPanel}>
                   <div style={styles.qrPreview}>
-                    <QRCodeSVG id="qr-pro" value={`http://192.168.100.68:5173/scan/${seleccionada.custom_id}`} size={85} level="L" />
+                    <QRCodeSVG id="qr-pro" value={`https://placas-perros-qr.onrender.com/scan/${seleccionada.custom_id}`} size={85} level="L" />
                     <button onClick={() => descargarSVG(seleccionada.nombre)} style={styles.btnDownloadMini}>📥 Descargar SVG</button>
                     <button onClick={() => { marcarComoImpreso(seleccionada.id); setSeleccionada(null); }} style={styles.btnConfirmPrint}>✅ CONFIRMAR</button>
                   </div>
@@ -147,7 +147,7 @@ const confirmarCambio = async () => {
                     <button onClick={() => setVerQR(true)} style={styles.btnShowQR}>🔍 Ver QR y opciones de descarga</button>
                   ) : (
                     <div style={styles.qrPreviewExpanded}>
-                       <QRCodeSVG id="qr-pro" value={`http://192.168.100.68:5173/scan/${seleccionada.custom_id}`} size={85} level="L" />
+                       <QRCodeSVG id="qr-pro" value={`https://placas-perros-qr.onrender.com/scan/${seleccionada.custom_id}`} size={85} level="L" />
                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', flex: 1 }}>
                           <button onClick={() => descargarSVG(seleccionada.nombre)} style={styles.btnSecondaryDark}>📥 Descargar SVG</button>
                           <button onClick={() => setVerQR(false)} style={styles.btnLink}>Ocultar QR</button>
