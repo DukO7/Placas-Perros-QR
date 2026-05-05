@@ -159,22 +159,64 @@ const confirmarCambio = async () => {
             </div>
           </>
         ) : (
-          <div style={styles.historialContainer}>
+            <div style={styles.historialContainer}>
             <h3 style={{fontSize: '15px', color: '#1e293b', marginBottom: '20px', fontWeight: '700'}}>Línea de Tiempo</h3>
             {eventos.length === 0 ? (
               <div style={styles.emptyState}><div style={{fontSize: '40px', marginBottom: '10px'}}>📜</div>No hay eventos registrados aún.</div>
             ) : (
               <div style={styles.timeline}>
-                {eventos.map((ev, i) => (
-                  <div key={i} style={styles.timelineItem}>
-                    <div style={styles.timelineDot}></div>
-                    <div style={styles.timelineContent}>
-                      <div style={styles.evTitulo}>{ev.evento}</div>
-                      <div style={styles.evDetalle}>{ev.detalle}</div>
-                      <div style={styles.evFecha}>{new Date(ev.fecha).toLocaleString()}</div>
+                {eventos.map((ev, i) => {
+                  // Detectamos si el detalle contiene el link de Google Maps
+                  const tieneMapa = ev.detalle.includes("https://www.google.com/maps");
+                  let textoLimpio = ev.detalle;
+                  let linkMapa = "";
+          
+                  if (tieneMapa) {
+                    // Separamos el texto del link (asumiendo que el link es lo último que enviamos)
+                    const partes = ev.detalle.split("https://");
+                    textoLimpio = partes[0];
+                    linkMapa = "https://" + partes[1];
+                  }
+          
+                  return (
+                    <div key={i} style={styles.timelineItem}>
+                      <div style={styles.timelineDot}></div>
+                      <div style={styles.timelineContent}>
+                        <div style={styles.evTitulo}>{ev.evento}</div>
+                        
+                        <div style={styles.evDetalle}>
+                          {textoLimpio}
+                          {tieneMapa && (
+                            <div style={{ marginTop: '10px' }}>
+                              <a 
+                                href={linkMapa} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '5px',
+                                  padding: '8px 15px',
+                                  backgroundColor: '#2563eb',
+                                  color: 'white',
+                                  borderRadius: '10px',
+                                  textDecoration: 'none',
+                                  fontSize: '12px',
+                                  fontWeight: 'bold',
+                                  boxShadow: '0 4px 6px rgba(37, 99, 235, 0.2)'
+                                }}
+                              >
+                                📍 Ver Ubicación en Mapa
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div style={styles.evFecha}>{new Date(ev.fecha).toLocaleString()}</div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
