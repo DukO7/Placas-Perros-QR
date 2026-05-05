@@ -48,10 +48,19 @@ const DashboardView = (props) => {
                         <img src={m.foto} alt="pet" style={styles.miniPhoto} /> : <span>🐾</span>
                       }
                     </div>
-                    <div>
-                      <div style={{ fontWeight: '700', color: '#1e293b', fontSize: '14px' }}>{m.nombre}</div>
-                      <div style={badgeStyle(m.estado)}>{m.estado}</div>
-                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}> {/* flex: 1 permite que el texto crezca sin empujar al botón */}
+  <div style={{ 
+    fontWeight: '700', 
+    color: '#1e293b', 
+    fontSize: '14px',
+    whiteSpace: 'nowrap', // Evita que el nombre salte de línea
+    overflow: 'hidden',   // Oculta lo que sobre
+    textOverflow: 'ellipsis' // Pone "..." si el nombre es muy largo
+  }}>
+    {m.nombre}
+  </div>
+  <div style={badgeStyle(m.estado)}>{m.estado}</div>
+</div>
                   </div>
                   <button onClick={() => setSeleccionada(m)} style={styles.btnMini}>Ficha</button>
                 </div>
@@ -130,7 +139,18 @@ kpiGrid: {
   card: { backgroundColor: 'white', padding: '30px', borderRadius: '24px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' },
   cardTitle: { marginTop: 0, marginBottom: '25px', fontSize: '17px', color: '#1e293b', fontWeight: '700' },
   chartContainer: { display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around', height: '220px' },
-  recentItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', borderRadius: '16px', backgroundColor: '#f8fafc', border: '1px solid #f1f5f9' },
+  recentItem: { 
+    display: 'flex', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    padding: '12px', 
+    borderRadius: '16px', 
+    backgroundColor: '#f8fafc', 
+    border: '1px solid #f1f5f9',
+    gap: '8px', // Añade un pequeño espacio para que no choquen en móvil
+    width: '100%', // Asegura que ocupe todo el ancho disponible
+    boxSizing: 'border-box' // Importante para que el padding no "empuje" hacia afuera
+  },
   miniPhotoContainer: { width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#e2e8f0', overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
   miniPhoto: { width: '100%', height: '100%', objectFit: 'cover' },
   btnMini: { padding: '6px 12px', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' },
