@@ -88,8 +88,17 @@ const DashboardView = (props) => {
 }
 
 // --- ESTILOS (IGUALES A LOS ANTERIORES) ---
-const navItemStyle = (activo) => ({ padding: '12px 15px', backgroundColor: activo ? '#334155' : 'transparent', color: activo ? 'white' : '#94a3b8', borderRadius: '10px', cursor: 'pointer', fontWeight: activo ? '600' : '400' });
-const badgeStyle = (estado) => ({ fontSize: '9px', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold', textTransform: 'uppercase', backgroundColor: estado === 'perdido' ? '#fee2e2' : '#dcfce7', color: estado === 'perdido' ? '#dc2626' : '#16a34a' });
+const navItemStyle = (activo) => ({ 
+    padding: '10px 12px', 
+    backgroundColor: activo ? '#334155' : 'transparent', 
+    color: activo ? 'white' : '#94a3b8', 
+    borderRadius: '10px', 
+    cursor: 'pointer', 
+    fontSize: '13px',
+    textAlign: 'center',
+    flex: window.innerWidth < 768 ? 1 : 'none', // Se expanden en móvil
+    fontWeight: activo ? '600' : '400' 
+});const badgeStyle = (estado) => ({ fontSize: '9px', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold', textTransform: 'uppercase', backgroundColor: estado === 'perdido' ? '#fee2e2' : '#dcfce7', color: estado === 'perdido' ? '#dc2626' : '#16a34a' });
 const styles = {
     layout: { 
         display: 'flex', 
