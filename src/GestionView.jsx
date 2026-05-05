@@ -11,6 +11,68 @@ const GestionView = ({ mascotas, agregarMascota, eliminarMascota, setSeleccionad
     impreso: 'todos',
     estado: 'todos'
   });
+  const RAZAS_PREDEFINIDAS = {
+    perro: [
+      "Akita Inu",
+      "Beagle",
+      "Bernés de la Montaña",
+      "Bichón Frisé",
+      "Boxer",
+      "Bulldog Americano",
+      "Bulldog Francés",
+      "Bulldog Inglés",
+      "Chihuahua (Cabeza de Manzana)",
+      "Chihuahua (Cabeza de Venado)",
+      "Chow Chow",
+      "Cocker Spaniel",
+      "Dálmata",
+      "Doberman",
+      "Dogo Argentino",
+      "French Poodle (Minioy / Toy / Estándar)",
+      "Golden Retriever",
+      "Gran Danés",
+      "Husky Siberiano",
+      "Labrador Retriever",
+      "Malamute",
+      "Maltés",
+      "Mestizo / Criollo",
+      "Mestizo (Talla Grande)",
+      "Mestizo (Talla Mediana)",
+      "Mestizo (Talla Chica)",
+      "Pastor Alemán",
+      "Pastor Belga Malinois",
+      "Pastor Australiano",
+      "Pinscher",
+      "Pitbull Terrier",
+      "Pomerania",
+      "Poodle (Caniche)",
+      "Pug",
+      "Rottweiler",
+      "San Bernardo",
+      "Schnauzer (Miniatura/Estándar)",
+      "Shiba Inu",
+      "Shih Tzu",
+      "Terrier (Varios)",
+      "Xoloitzcuintle",
+      "Yorkshire Terrier"
+    ],
+    gato: [
+      "Angora",
+      "Azul Ruso",
+      "Bengala",
+      "Bombay",
+      "Británico de Pelo Corto",
+      "Esfinge (Sphynx)",
+      "Himalayo",
+      "Maine Coon",
+      "Mestizo (Común Europeo)",
+      "Mestizo (Pelo Largo)",
+      "Mestizo (Pelo Corto)",
+      "Persa",
+      "Ragdoll",
+      "Siamés"
+    ]
+  };
 
   const [nueva, setNueva] = useState({ 
     nombre: '', dueno: '', contacto: '', raza: '', señas: '', foto: '', direccion: '' 
@@ -165,30 +227,75 @@ const GestionView = ({ mascotas, agregarMascota, eliminarMascota, setSeleccionad
       </div>
 
       {/* MODAL DE REGISTRO */}
-      {mostrarForm && (
-        <div style={modalOverlayStyle}>
-          <div style={{...modalContentStyle, width: '450px', textAlign: 'left'}}>
-            <h2 style={{marginTop: 0, fontSize: '20px'}}>Registrar en Rosfran 🐾</h2>
-            <form onSubmit={handleSubmit} style={{display: 'grid', gap: '15px'}}>
-               <input placeholder="Nombre de la Mascota" required style={inputStyle} onChange={e => setNueva({...nueva, nombre: e.target.value})} />
-               <input placeholder="Raza" required style={inputStyle} onChange={e => setNueva({...nueva, raza: e.target.value})} />
-               <input placeholder="Nombre del Dueño" required style={inputStyle} onChange={e => setNueva({...nueva, dueno: e.target.value})} />
-               <input placeholder="Teléfono de contacto" required style={inputStyle} onChange={e => setNueva({...nueva, contacto: e.target.value})} />
-               <input placeholder="Dirección para placa" required style={inputStyle} value={nueva.direccion} onChange={e => setNueva({...nueva, direccion: e.target.value})} />
-               
-               <div style={{ backgroundColor: '#f8fafc', padding: '15px', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
-                 <label style={{fontSize: '11px', fontWeight: 'bold', color: '#64748b', display: 'block', marginBottom: '8px'}}>FOTO DE LA MASCOTA</label>
-                 <input type="file" accept="image/*" onChange={manejarArchivo} style={{ fontSize: '12px' }} />
-               </div>
-
-               <div style={{display: 'flex', gap: '10px'}}>
-                  <button type="submit" style={{...btnPrimaryStyle, flex: 1}}>Guardar Registro</button>
-                  <button type="button" onClick={() => setMostrarForm(false)} style={{...btnSecondaryStyle, flex: 1}}>Cancelar</button>
-               </div>
-            </form>
-          </div>
+      {/* MODAL DE REGISTRO */}
+{mostrarForm && (
+  <div style={modalOverlayStyle}>
+    <div style={{...modalContentStyle, width: '450px', textAlign: 'left'}}>
+      <h2 style={{marginTop: 0, fontSize: '20px'}}>Registrar en Rosfran 🐾</h2>
+      
+      <form onSubmit={handleSubmit} style={{display: 'grid', gap: '15px'}}>
+        
+        {/* SELECTOR DE ESPECIE */}
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button 
+            type="button"
+            onClick={() => setNueva({...nueva, especie: 'perro', raza: ''})}
+            style={{ 
+              flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid #e2e8f0',
+              backgroundColor: nueva.especie === 'perro' ? '#2563eb' : 'white',
+              color: nueva.especie === 'perro' ? 'white' : '#64748b',
+              fontWeight: 'bold', cursor: 'pointer'
+            }}
+          > 🐶 Perro </button>
+          <button 
+            type="button"
+            onClick={() => setNueva({...nueva, especie: 'gato'})}
+            style={{ 
+              flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid #e2e8f0',
+              backgroundColor: nueva.especie === 'gato' ? '#2563eb' : 'white',
+              color: nueva.especie === 'gato' ? 'white' : '#64748b',
+              fontWeight: 'bold', cursor: 'pointer'
+            }}
+          > 🐱 Gato </button>
         </div>
-      )}
+
+        <input placeholder="Nombre de la Mascota" required style={inputStyle} value={nueva.nombre} onChange={e => setNueva({...nueva, nombre: e.target.value})} />
+        
+        {/* INPUT DE RAZA CON AUTOCOMPLETADO (Datalist) */}
+        <div>
+          <input 
+            list="lista-razas" 
+            placeholder="Raza (Ej: Schnauzer, Siamés...)" 
+            required 
+            style={inputStyle} 
+            value={nueva.raza}
+            onChange={e => setNueva({...nueva, raza: e.target.value})} 
+          />
+          <datalist id="lista-razas">
+            {nueva.especie === 'perro' 
+              ? RAZAS_PREDEFINIDAS.perro.map(r => <option key={r} value={r} />)
+              : RAZAS_PREDEFINIDAS.gato.map(r => <option key={r} value={r} />)
+            }
+          </datalist>
+        </div>
+
+        <input placeholder="Nombre del Dueño" required style={inputStyle} value={nueva.dueno} onChange={e => setNueva({...nueva, dueno: e.target.value})} />
+        <input placeholder="Teléfono de contacto" required style={inputStyle} value={nueva.contacto} onChange={e => setNueva({...nueva, contacto: e.target.value})} />
+        <input placeholder="Dirección para placa" required style={inputStyle} value={nueva.direccion} onChange={e => setNueva({...nueva, direccion: e.target.value})} />
+        
+        <div style={{ backgroundColor: '#f8fafc', padding: '15px', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
+          <label style={{fontSize: '11px', fontWeight: 'bold', color: '#64748b', display: 'block', marginBottom: '8px'}}>FOTO DE LA MASCOTA</label>
+          <input type="file" accept="image/*" onChange={manejarArchivo} style={{ fontSize: '12px' }} />
+        </div>
+
+        <div style={{display: 'flex', gap: '10px'}}>
+          <button type="submit" style={{...btnPrimaryStyle, flex: 1}}>Guardar Registro</button>
+          <button type="button" onClick={() => setMostrarForm(false)} style={{...btnSecondaryStyle, flex: 1}}>Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
     </>
   );
 };
