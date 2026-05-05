@@ -75,9 +75,14 @@ const GestionView = ({ mascotas, agregarMascota, eliminarMascota, setSeleccionad
   };
 
   const [nueva, setNueva] = useState({ 
-    nombre: '', dueno: '', contacto: '', raza: '', señas: '', foto: '', direccion: '' 
+    nombre: '', 
+    dueno: '', 
+    contacto: '', 
+    raza: '', 
+    especie: 'perro', // Siempre inicia como perro
+    foto: '', 
+    direccion: '' 
   });
-
   // --- LÓGICA DE FILTRADO MULTI-COLUMNA ---
   const listaBase = vistaActual === 'censo' ? mascotas : mascotas.filter(m => !m.impreso);
 
@@ -228,18 +233,19 @@ const GestionView = ({ mascotas, agregarMascota, eliminarMascota, setSeleccionad
 
       {/* MODAL DE REGISTRO */}
       {/* MODAL DE REGISTRO */}
+{/* MODAL DE REGISTRO */}
 {mostrarForm && (
   <div style={modalOverlayStyle}>
     <div style={{...modalContentStyle, width: '450px', textAlign: 'left'}}>
-      <h2 style={{marginTop: 0, fontSize: '20px'}}>Registrar en Rosfran 🐾</h2>
+      <h2 style={{marginTop: 0, fontSize: '20px'}}>Registrar Mascota 🐾</h2>
       
       <form onSubmit={handleSubmit} style={{display: 'grid', gap: '15px'}}>
         
-        {/* SELECTOR DE ESPECIE */}
+        {/* SELECTOR DE ESPECIE (Botones como antes) */}
         <div style={{ display: 'flex', gap: '10px' }}>
           <button 
             type="button"
-            onClick={() => setNueva({...nueva, especie: 'perro', raza: ''})}
+            onClick={() => setNueva({...nueva, especie: 'perro', raza: RAZAS_PREDEFINIDAS.perro[0]})}
             style={{ 
               flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid #e2e8f0',
               backgroundColor: nueva.especie === 'perro' ? '#2563eb' : 'white',
@@ -249,7 +255,7 @@ const GestionView = ({ mascotas, agregarMascota, eliminarMascota, setSeleccionad
           > 🐶 Perro </button>
           <button 
             type="button"
-            onClick={() => setNueva({...nueva, especie: 'gato'})}
+            onClick={() => setNueva({...nueva, especie: 'gato', raza: RAZAS_PREDEFINIDAS.gato[0]})}
             style={{ 
               flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid #e2e8f0',
               backgroundColor: nueva.especie === 'gato' ? '#2563eb' : 'white',
@@ -259,29 +265,32 @@ const GestionView = ({ mascotas, agregarMascota, eliminarMascota, setSeleccionad
           > 🐱 Gato </button>
         </div>
 
-        <input placeholder="Nombre de la Mascota" required style={inputStyle} value={nueva.nombre} onChange={e => setNueva({...nueva, nombre: e.target.value})} />
+        <input 
+          placeholder="Nombre de la Mascota" 
+          required 
+          style={inputStyle} 
+          value={nueva.nombre} 
+          onChange={e => setNueva({...nueva, nombre: e.target.value})} 
+        />
         
-        {/* INPUT DE RAZA CON AUTOCOMPLETADO (Datalist) */}
+        {/* SELECTOR DE RAZA (Menú desplegable) */}
         <div>
-          <input 
-            list="lista-razas" 
-            placeholder="Raza (Ej: Schnauzer, Siamés...)" 
-            required 
+          <label style={{fontSize: '11px', fontWeight: 'bold', color: '#64748b', marginBottom: '5px', display: 'block'}}>RAZA</label>
+          <select 
             style={inputStyle} 
             value={nueva.raza}
-            onChange={e => setNueva({...nueva, raza: e.target.value})} 
-          />
-          <datalist id="lista-razas">
-            {nueva.especie === 'perro' 
-              ? RAZAS_PREDEFINIDAS.perro.map(r => <option key={r} value={r} />)
-              : RAZAS_PREDEFINIDAS.gato.map(r => <option key={r} value={r} />)
-            }
-          </datalist>
+            onChange={e => setNueva({...nueva, raza: e.target.value})}
+            required
+          >
+            {RAZAS_PREDEFINIDAS[nueva.especie].map(r => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
         </div>
 
         <input placeholder="Nombre del Dueño" required style={inputStyle} value={nueva.dueno} onChange={e => setNueva({...nueva, dueno: e.target.value})} />
-        <input placeholder="Teléfono de contacto" required style={inputStyle} value={nueva.contacto} onChange={e => setNueva({...nueva, contacto: e.target.value})} />
-        <input placeholder="Dirección para placa" required style={inputStyle} value={nueva.direccion} onChange={e => setNueva({...nueva, direccion: e.target.value})} />
+        <input placeholder="Teléfono" required style={inputStyle} value={nueva.contacto} onChange={e => setNueva({...nueva, contacto: e.target.value})} />
+        <input placeholder="Dirección" required style={inputStyle} value={nueva.direccion} onChange={e => setNueva({...nueva, direccion: e.target.value})} />
         
         <div style={{ backgroundColor: '#f8fafc', padding: '15px', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
           <label style={{fontSize: '11px', fontWeight: 'bold', color: '#64748b', display: 'block', marginBottom: '8px'}}>FOTO DE LA MASCOTA</label>
@@ -289,7 +298,7 @@ const GestionView = ({ mascotas, agregarMascota, eliminarMascota, setSeleccionad
         </div>
 
         <div style={{display: 'flex', gap: '10px'}}>
-          <button type="submit" style={{...btnPrimaryStyle, flex: 1}}>Guardar Registro</button>
+          <button type="submit" style={{...btnPrimaryStyle, flex: 1}}>Guardar</button>
           <button type="button" onClick={() => setMostrarForm(false)} style={{...btnSecondaryStyle, flex: 1}}>Cancelar</button>
         </div>
       </form>
