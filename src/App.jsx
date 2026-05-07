@@ -9,12 +9,12 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const API_BASE = 'https://api-qrplacas.onrender.com/api/mascotas';
-const [estaAutenticado, setEstaAutenticado] = useState(false);
+
 function App() {
   const [mascotas, setMascotas] = useState([]);
   const [seleccionada, setSeleccionada] = useState(null);
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
-
+  const [estaAutenticado, setEstaAutenticado] = useState(false);
   // --- 2. FUNCIÓN GLOBAL DE NOTIFICACIÓN ---
   const notify = (msg, type = "success") => {
     toast[type](msg, {
