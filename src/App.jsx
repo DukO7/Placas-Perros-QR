@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import ScanView from './ScanView'
 import DashboardView from './DashboardView'
+import LoginView from './LoginView'
 
 // --- 1. IMPORTACIONES DE ALERTAS ---
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const API_BASE = 'https://api-qrplacas.onrender.com/api/mascotas';
-
+const [estaAutenticado, setEstaAutenticado] = useState(false);
 function App() {
   const [mascotas, setMascotas] = useState([]);
   const [seleccionada, setSeleccionada] = useState(null);
@@ -139,6 +140,9 @@ function App() {
 
   if (currentPath.startsWith('/scan/')) {
     return <ScanView mascotas={mascotas} />;
+  }
+  if (!estaAutenticado) {
+    return <LoginView onLogin={() => setEstaAutenticado(true)} />;
   }
 
   return (
