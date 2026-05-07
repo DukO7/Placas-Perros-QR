@@ -141,7 +141,9 @@ function App() {
   if (currentPath.startsWith('/scan/')) {
     return <ScanView mascotas={mascotas} />;
   }
- 
+  if (!estaAutenticado) {
+    return <LoginView onLogin={() => setEstaAutenticado(true)} />;
+  }
 
   return (
     <>
