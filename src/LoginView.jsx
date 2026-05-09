@@ -1,22 +1,26 @@
 import React from 'react';
+import axios from 'axios';
 
 const LoginView = ({ onLogin }) => {
-  // Usamos React.useState en lugar de desestructurar para evitar conflictos de versiones
   const [usuario, setUsuario] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [error, setError] = React.useState(false);
 
-  const manejarLogin = (e) => {
+  const manejarLogin = async (e) => {
     e.preventDefault();
     
-    // Simulación de base de datos de usuarios
-    if (usuario === 'admin' && password === '12345') {
-      onLogin({ nombre: 'Administrador', rol: 'admin' });
-    } 
-    else if (usuario === 'luis' && password === 'cliente123') {
-      onLogin({ nombre: 'Luis Fernando', rol: 'cliente' });
-    } 
-    else {
+    try {
+      // Llamada real a tu API en Render
+      const response = await axios.post('https://api-qrplacas.onrender.com/api/login', {
+        usuario,
+        password
+      });
+
+      if (response.data.success) {
+        // 'datos' ahora incluirá { id, nombre, rol }
+        onLogin(response.data.user);
+      }
+    } catch (err) {
       setError(true);
       setTimeout(() => setError(false), 3000);
     }

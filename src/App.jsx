@@ -168,9 +168,13 @@ function App() {
       ) : (
         <ClienteView 
           usuario={usuario}
-          mascotas={mascotas.filter(m => m.dueno === usuario.nombre)}
+          // CAMBIO: Ahora filtramos por ID para que sea infalible
+          mascotas={mascotas.filter(m => m.usuario_id === usuario.id)}
           actualizarEstado={actualizarEstado}
           onLogout={() => setUsuario(null)}
+          // IMPORTANTE: Pasamos estas dos para que el modal funcione en la vista cliente
+          seleccionada={seleccionada}
+          setSeleccionada={setSeleccionada}
         />
       )}
     </>
