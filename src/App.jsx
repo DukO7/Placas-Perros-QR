@@ -3,8 +3,8 @@ import axios from 'axios'
 import ScanView from './ScanView'
 import DashboardView from './DashboardView'
 import LoginView from './LoginView'
+import ClienteView from './ClienteView' // <-- Asegúrate de crear este archivo
 
-// --- 1. IMPORTACIONES DE ALERTAS ---
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -14,8 +14,10 @@ function App() {
   const [mascotas, setMascotas] = useState([]);
   const [seleccionada, setSeleccionada] = useState(null);
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
-  const [estaAutenticado, setEstaAutenticado] = useState(false);
-  // --- 2. FUNCIÓN GLOBAL DE NOTIFICACIÓN ---
+  
+  // Cambiamos el booleano por el objeto usuario
+  const [usuario, setUsuario] = useState(null);
+
   const notify = (msg, type = "success") => {
     toast[type](msg, {
       position: "top-right",
@@ -88,7 +90,6 @@ function App() {
       setMascotas(prev => prev.map(m => m.id === id ? { ...m, estado: nuevoEstado } : m));
       setSeleccionada(prev => (prev && prev.id === id ? { ...prev, estado: nuevoEstado } : prev));
       
-      // Alerta dinámica según el estado
       if (nuevoEstado === 'perdido') {
         notify(`🚨 REPORTE: Mascota marcada como PERDIDA`, "error");
       } else {
@@ -138,29 +139,40 @@ function App() {
     return () => window.removeEventListener('popstate', handleLocationChange);
   }, []);
 
+  // --- RENDERIZADO FINAL ---
+
   if (currentPath.startsWith('/scan/')) {
     return <ScanView mascotas={mascotas} />;
   }
-  if (!estaAutenticado) {
-    return <LoginView onLogin={() => setEstaAutenticado(true)} />;
+
+  if (!usuario) {
+    return <LoginView onLogin={(datos) => setUsuario(datos)} />;
   }
 
   return (
     <>
-      {/* --- 3. CONTENEDOR DE ALERTAS (MAX 5) --- */}
       <ToastContainer limit={5} newestOnTop />
-
-      <DashboardView 
-        mascotas={mascotas}
-        contar={contar}
-        seleccionada={seleccionada}
-        setSeleccionada={setSeleccionada}
-        descargarSVG={descargarSVG}
-        agregarMascota={agregarMascota}
-        eliminarMascota={eliminarMascota}
-        marcarComoImpreso={marcarComoImpreso}
-        actualizarEstado={actualizarEstado}
-      />
+      {usuario.rol === 'admin' ? (
+        <DashboardView 
+          mascotas={mascotas}
+          contar={contar}
+          seleccionada={seleccionada}
+          setSeleccionada={setSeleccionada}
+          descargarSVG={descargarSVG}
+          agregarMascota={agregarMascota}
+          eliminarMascota={eliminarMascota}
+          marcarComoImpreso={marcarComoImpreso}
+          actualizarEstado={actualizarEstado}
+          onLogout={() => setUsuario(null)}
+        />
+      ) : (
+        <ClienteView 
+          usuario={usuario}
+          mascotas={mascotas.filter(m => m.dueno === usuario.nombre)}
+          actualizarEstado={actualizarEstado}
+          onLogout={() => setUsuario(null)}
+        />
+      )}
     </>
   );
 }

@@ -8,9 +8,15 @@ const LoginView = ({ onLogin }) => {
 
   const manejarLogin = (e) => {
     e.preventDefault();
+    
+    // Simulación de base de datos de usuarios
     if (usuario === 'admin' && password === '12345') {
-      onLogin();
-    } else {
+      onLogin({ nombre: 'Administrador', rol: 'admin' });
+    } 
+    else if (usuario === 'luis' && password === 'cliente123') {
+      onLogin({ nombre: 'Luis Fernando', rol: 'cliente' });
+    } 
+    else {
       setError(true);
       setTimeout(() => setError(false), 3000);
     }
