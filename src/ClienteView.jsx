@@ -1,162 +1,149 @@
 import React, { useState } from 'react';
+import DetalleMascotaModal from './DetalleMascotaModal';
 
 const ClienteView = (props) => {
-  // Mantenemos el estado de navegación interna igual que el Dashboard
-  const [seccionInterna, setSeccionInterna] = useState('inicio');
-  const { mascotas, usuario, actualizarEstado, onLogout } = props;
-
-  const renderContent = () => {
-    // Si el cliente tiene muchas mascotas, mostramos el KPI Grid
-    return (
-      <>
-        <header style={{ marginBottom: '40px' }}>
-          <h1 style={{ margin: 0, fontSize: '26px', color: '#0f172a', fontWeight: '800' }}>Panel de Dueño</h1>
-          <p style={{ color: '#64748b', margin: '5px 0 0 0' }}>Bienvenido, {usuario.nombre}. Gestiona la seguridad de tus amigos.</p>
-        </header>
-
-        {/* Mismos KPIs que el Dash pero solo de sus mascotas */}
-        <section style={styles.kpiGrid}>
-          <KPICard title="Mis Mascotas" count={mascotas.length} icon="🐶" />
-          <KPICard title="Protegidos" count={mascotas.filter(m => m.estado === 'activo').length} icon="🛡️" color="#16a34a" />
-          <KPICard title="Reportes" count={mascotas.filter(m => m.estado === 'perdido').length} icon="⚠️" color="#dc2626" />
-        </section>
-
-        <div style={styles.card}>
-          <h3 style={styles.cardTitle}>Mis Perfiles Activos</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {mascotas.length === 0 ? (
-              <p style={{textAlign: 'center', color: '#64748b'}}>No tienes mascotas registradas.</p>
-            ) : (
-              mascotas.map(m => (
-                <div key={m.id} style={styles.recentItem}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                    <div style={styles.miniPhotoContainer}>
-                      {m.foto ? <img src={m.foto} alt="pet" style={styles.miniPhoto} /> : <span>🐾</span>}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: '700', color: '#1e293b', fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {m.nombre}
-                      </div>
-                      <div style={badgeStyle(m.estado)}>{m.estado}</div>
-                    </div>
-                  </div>
-                  
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    {m.estado === 'activo' ? (
-                      <button 
-                        onClick={() => actualizarEstado(m.id, 'perdido', 'Reportado por el dueño')}
-                        style={{...styles.btnMini, backgroundColor: '#fee2e2', color: '#dc2626', border: 'none'}}
-                      >🚨 Reportar</button>
-                    ) : (
-                      <button 
-                        onClick={() => actualizarEstado(m.id, 'activo', 'Encontrado por el dueño')}
-                        style={{...styles.btnMini, backgroundColor: '#dcfce7', color: '#16a34a', border: 'none'}}
-                      >✅ Encontrado</button>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </>
-    );
-  };
+  const { mascotas, usuario, onLogout, setSeleccionada } = props;
 
   return (
-    <div style={styles.layout}>
-      <aside style={styles.sidebar}>
-        <div style={styles.logoArea}>
-          <div style={{ fontSize: '28px' }}>🐕</div>
-          <h2 style={{ fontSize: '18px', margin: 0, fontWeight: '700' }}>PETID CLIENTE</h2>
+    <div style={styles.page}>
+      {/* HEADER SIMPLIFICADO */}
+      <header style={styles.header}>
+        <div>
+          <h1 style={styles.title}>Mis Mascotas</h1>
+          <p style={styles.subtitle}>Hola, {usuario.nombre}</p>
         </div>
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <div onClick={() => setSeccionInterna('inicio')} style={navItemStyle(seccionInterna === 'inicio')}>🏠 Mis Mascotas</div>
-          <div onClick={onLogout} style={navItemStyle(false)}>🚪 Cerrar Sesión</div>
-        </nav>
-      </aside>
+        <button onClick={onLogout} style={styles.btnLogout}>Cerrar Sesión</button>
+      </header>
 
-      <main style={styles.mainContent}>
-        {renderContent()}
+      {/* LISTA DE MASCOTAS TIPO TARJETAS DE PERFIL */}
+      <main style={styles.grid}>
+        {mascotas.length === 0 ? (
+          <div style={styles.empty}>No tienes mascotas registradas.</div>
+        ) : (
+          mascotas.map(m => (
+            <div key={m.id} style={styles.card}>
+              <div style={styles.cardContent}>
+                <div style={styles.imageWrapper}>
+                  {m.foto ? (
+                    <img src={m.foto} alt="pet" style={styles.photo} />
+                  ) : (
+                    <span style={{ fontSize: '40px' }}>🐾</span>
+                  )}
+                  <div style={badgeStyle(m.estado)}>{m.estado}</div>
+                </div>
+                
+                <div style={styles.info}>
+                  <h2 style={styles.petName}>{m.nombre}</h2>
+                  <p style={styles.petRaza}>{m.raza}</p>
+                </div>
+              </div>
+
+              <div style={styles.actions}>
+                <button 
+                  onClick={() => setSeleccionada(m)} 
+                  style={styles.btnPrimary}
+                >
+                  📖 Ver Historial y Ubicación
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </main>
+
+      {/* REUTILIZAMOS TU MODAL PARA QUE EL DUEÑO VEA EL MAPA E HISTORIAL */}
+      <DetalleMascotaModal {...props} />
     </div>
   );
 };
 
-// --- COMPONENTES Y ESTILOS CLONADOS DEL DASHBOARD ---
-
-const KPICard = ({ title, count, icon, color = '#1e293b' }) => (
-  <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-    <div style={{fontSize:'20px', marginBottom:'5px'}}>{icon}</div>
-    <div style={{color:'#64748b', fontSize:'13px'}}>{title}</div>
-    <div style={{fontSize:'24px', fontWeight:'800', color}}>{count}</div>
-  </div>
-);
-
-const navItemStyle = (activo) => ({ 
-    padding: '10px 12px', 
-    backgroundColor: activo ? '#334155' : 'transparent', 
-    color: activo ? 'white' : '#94a3b8', 
-    borderRadius: '10px', 
-    cursor: 'pointer', 
-    fontSize: '13px',
-    fontWeight: activo ? '600' : '400',
-    transition: '0.2s'
-});
-
-const badgeStyle = (estado) => ({ 
-    fontSize: '9px', 
-    padding: '2px 8px', 
-    borderRadius: '10px', 
-    fontWeight: 'bold', 
-    textTransform: 'uppercase', 
-    display: 'inline-block',
-    backgroundColor: estado === 'perdido' ? '#fee2e2' : '#dcfce7', 
-    color: estado === 'perdido' ? '#dc2626' : '#16a34a' 
+// --- ESTILOS MINIMALISTAS ---
+const badgeStyle = (estado) => ({
+  position: 'absolute',
+  bottom: '10px',
+  right: '10px',
+  fontSize: '10px',
+  padding: '4px 12px',
+  borderRadius: '20px',
+  fontWeight: '800',
+  textTransform: 'uppercase',
+  backgroundColor: estado === 'perdido' ? '#ef4444' : '#10b981',
+  color: 'white',
+  boxShadow: '0 4px 10px rgba(0,0,0,0.2)'
 });
 
 const styles = {
-    layout: { 
-        display: 'flex', 
-        flexDirection: window.innerWidth < 768 ? 'column' : 'row',
-        minHeight: '100vh', 
-        backgroundColor: '#f8fafc', 
-        fontFamily: 'system-ui, sans-serif' 
-    },
-    sidebar: { 
-        width: window.innerWidth < 768 ? '100%' : '260px', 
-        boxSizing: 'border-box',
-        backgroundColor: '#1e293b', 
-        color: 'white', 
-        padding: '20px' 
-    },
-    logoArea: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '40px' },
-    mainContent: { 
-        flex: 1, 
-        padding: window.innerWidth < 768 ? '20px' : '40px', 
-        overflowY: 'auto' 
-    },
-    kpiGrid: { 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', 
-        gap: '20px', 
-        marginBottom: '40px' 
-    },
-    card: { backgroundColor: 'white', padding: '30px', borderRadius: '24px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' },
-    cardTitle: { marginTop: 0, marginBottom: '25px', fontSize: '17px', color: '#1e293b', fontWeight: '700' },
-    recentItem: { 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        padding: '12px', 
-        borderRadius: '16px', 
-        backgroundColor: '#f8fafc', 
-        border: '1px solid #f1f5f9',
-        marginBottom: '8px'
-    },
-    miniPhotoContainer: { width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#e2e8f0', overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
-    miniPhoto: { width: '100%', height: '100%', objectFit: 'cover' },
-    btnMini: { padding: '6px 12px', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }
+  page: {
+    minHeight: '100vh',
+    backgroundColor: '#f1f5f9',
+    padding: window.innerWidth < 768 ? '20px' : '40px',
+    fontFamily: 'system-ui, sans-serif'
+  },
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    maxWidth: '1000px',
+    margin: '0 auto 40px auto'
+  },
+  title: { margin: 0, fontSize: '28px', color: '#1e293b', fontWeight: '800' },
+  subtitle: { margin: 0, color: '#64748b', fontSize: '15px' },
+  btnLogout: {
+    padding: '10px 18px',
+    backgroundColor: 'white',
+    border: '1px solid #e2e8f0',
+    borderRadius: '12px',
+    cursor: 'pointer',
+    color: '#64748b',
+    fontWeight: '600'
+  },
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+    gap: '25px',
+    maxWidth: '1000px',
+    margin: '0 auto'
+  },
+  card: {
+    backgroundColor: 'white',
+    borderRadius: '28px',
+    padding: '20px',
+    boxShadow: '0 10px 25px -5px rgba(0,0,0,0.05)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '20px',
+    transition: 'transform 0.2s'
+  },
+  cardContent: { display: 'flex', alignItems: 'center', gap: '20px' },
+  imageWrapper: {
+    width: '100px',
+    height: '100px',
+    borderRadius: '22px',
+    backgroundColor: '#f8fafc',
+    overflow: 'hidden',
+    position: 'relative',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    border: '4px solid #f1f5f9'
+  },
+  photo: { width: '100%', height: '100%', objectFit: 'cover' },
+  info: { flex: 1 },
+  petName: { margin: 0, fontSize: '22px', color: '#1e293b', fontWeight: '800' },
+  petRaza: { margin: '4px 0', color: '#64748b', fontSize: '14px' },
+  actions: { display: 'flex', gap: '10px' },
+  btnPrimary: {
+    flex: 1,
+    padding: '14px',
+    backgroundColor: '#1e293b',
+    color: 'white',
+    border: 'none',
+    borderRadius: '16px',
+    fontWeight: '700',
+    cursor: 'pointer',
+    fontSize: '14px'
+  },
+  empty: { textAlign: 'center', gridColumn: '1/-1', padding: '50px', color: '#94a3b8' }
 };
 
 export default ClienteView;
