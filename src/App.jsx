@@ -31,9 +31,9 @@ function App() {
     });
   };
 
-  useEffect(() => {
-    fetchMascotas();
-  }, []);
+//  useEffect(() => {
+//    fetchMascotas();
+//  }, []);
 
   useEffect(() => {
     if (usuario) {
