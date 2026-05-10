@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-
+import axios from 'axios';
 const GestionView = ({ mascotas, agregarMascota, eliminarMascota, setSeleccionada }) => {
   const [mostrarForm, setMostrarForm] = useState(false);
   const [vistaActual, setVistaActual] = useState('censo'); 
