@@ -2,8 +2,28 @@ import React from 'react';
 import DetalleMascotaModal from './DetalleMascotaModal';
 
 const ClienteView = (props) => {
-  const { mascotas, usuario, onLogout, setSeleccionada } = props;
+    const { usuario, actualizarEstado, onLogout, seleccionada, setSeleccionada } = props;
+  
+    // Estado local para las mascotas de ESTE cliente
+    const [misMascotas, setMisMascotas] = useState([]);
+    const [cargando, setCargando] = useState(true);
 
+    useEffect(() => {
+        const fetchMisMascotas = async () => {
+          try {
+            const response = await axios.get(`https://api-qrplacas.onrender.com/api/mascotas/usuario/${usuario.id}`);
+            setMisMascotas(response.data);
+          } catch (error) {
+            console.error("Error cargando tus mascotas:", error);
+          } finally {
+            setCargando(false);
+          }
+        };
+    
+        if (usuario?.id) fetchMisMascotas();
+      }, [usuario.id]);
+
+      if (cargando) return <div style={{padding: '40px', textAlign: 'center'}}>Cargando tus mascotas...</div>;
   // Estilos definidos como constantes para evitar errores de renderizado
   const styles = {
     wrapper: {
@@ -91,12 +111,12 @@ const ClienteView = (props) => {
 
       {/* CUERPO - GRILLA DE TARJETAS */}
       <div style={styles.grid}>
-        {mascotas.length === 0 ? (
+        {misMascotas.length === 0 ? (
           <p style={{ textAlign: 'center', color: '#64748b', gridColumn: '1/-1' }}>
             No tienes mascotas registradas.
           </p>
         ) : (
-          mascotas.map(m => (
+            misMascotas.map(m => (
             <div key={m.id} style={styles.card}>
               <div style={styles.petInfo}>
                 <div style={styles.imgContainer}>
