@@ -4,7 +4,7 @@ import ScanView from './ScanView'
 import DashboardView from './DashboardView'
 import LoginView from './LoginView'
 import ClienteView from './ClienteView' // <-- Asegúrate de crear este archivo
-
+import RastreadorPublico  from './RastreadorPublico'
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
