@@ -169,6 +169,9 @@ function App() {
   if (currentPath.startsWith('/scan/')) {
     return <ScanView mascotas={mascotas} />;
   }
+  if (currentPath === '/rastreo') {
+    return <RastreadorPublico />;
+  }
 
   if (!usuario) {
     return <LoginView onLogin={loginExitoso} />;
