@@ -405,10 +405,7 @@ const dueñosExistentes = [...new Set(mascotas.map(m => m.dueno))].map(nombre =>
     </ul>
   )}
 </div>
-
-<input placeholder="Teléfono" required style={inputStyle} value={nueva.contacto} onChange={e => setNueva({...nueva, contacto: e.target.value})} />
-<input placeholder="Dirección" required style={inputStyle} value={nueva.direccion} onChange={e => setNueva({...nueva, direccion: e.target.value})} />
-        <input placeholder="Teléfono" required style={inputStyle} value={nueva.contacto} onChange={e => setNueva({...nueva, contacto: e.target.value})} />
+       <input placeholder="Teléfono" required style={inputStyle} value={nueva.contacto} onChange={e => setNueva({...nueva, contacto: e.target.value})} />
         <input placeholder="Dirección" required style={inputStyle} value={nueva.direccion} onChange={e => setNueva({...nueva, direccion: e.target.value})} />
         
         <div style={{ backgroundColor: '#f8fafc', padding: '15px', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
