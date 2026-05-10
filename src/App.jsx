@@ -30,6 +30,7 @@ function App() {
   };
 
   const cerrarSesion = () => {
+    console.log("Ejecutando limpieza de sesión...");
     setUsuario(null);
     localStorage.removeItem('usuario_petid');
     // Opcional: limpiar otros estados
