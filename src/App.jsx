@@ -35,6 +35,12 @@ function App() {
     fetchMascotas();
   }, []);
 
+  useEffect(() => {
+    if (usuario) {
+      fetchMascotas();
+    }
+  }, [usuario]);
+
   const fetchMascotas = async () => {
     try {
       const response = await axios.get(API_BASE);
