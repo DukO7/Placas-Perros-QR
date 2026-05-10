@@ -195,7 +195,7 @@ function App() {
           // CAMBIO: Ahora filtramos por ID para que sea infalible
           mascotas={mascotas.filter(m => m.usuario_id === usuario.id)}
           actualizarEstado={actualizarEstado}
-          oonLogout={cerrarSesion}
+          onLogout={cerrarSesion}
           // IMPORTANTE: Pasamos estas dos para que el modal funcione en la vista cliente
           seleccionada={seleccionada}
           setSeleccionada={setSeleccionada}
