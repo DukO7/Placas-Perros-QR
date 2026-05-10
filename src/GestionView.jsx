@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 const GestionView = ({ mascotas, agregarMascota, eliminarMascota, setSeleccionada }) => {
   const [mostrarForm, setMostrarForm] = useState(false);
   const [vistaActual, setVistaActual] = useState('censo'); 
-  
+  const [sugerencias, setSugerencias] = useState([]);
   // 🔍 Estado para filtros actualizado con "estado"
   const [filtros, setFiltros] = useState({
     nombre: '',
@@ -81,7 +81,8 @@ const GestionView = ({ mascotas, agregarMascota, eliminarMascota, setSeleccionad
     raza: '', 
     especie: 'perro', // Siempre inicia como perro
     foto: '', 
-    direccion: '' 
+    direccion: '',
+    usuario_id: null
   });
   // --- LÓGICA DE FILTRADO MULTI-COLUMNA ---
   const listaBase = vistaActual === 'censo' ? mascotas : mascotas.filter(m => !m.impreso);
@@ -99,6 +100,22 @@ const GestionView = ({ mascotas, agregarMascota, eliminarMascota, setSeleccionad
     return matchNombre && matchDueno && matchImpreso && matchEstado;
   });
 
+  const buscarDueño = async (texto) => {
+    // Si el usuario borra o escribe algo nuevo, reseteamos el ID seleccionado
+    setNueva({ ...nueva, dueno: texto, usuario_id: null }); 
+    
+    if (texto.length > 2) {
+      try {
+        const res = await axios.get(`https://api-qrplacas.onrender.com/api/usuarios/buscar?q=${texto}`);
+        setSugerencias(res.data);
+      } catch (err) {
+        console.error(err);
+      }
+    } else {
+      setSugerencias([]);
+    }
+  };
+
   const manejarArchivo = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -108,11 +125,52 @@ const GestionView = ({ mascotas, agregarMascota, eliminarMascota, setSeleccionad
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    agregarMascota(nueva);
-    setMostrarForm(false);
-    setNueva({ nombre: '', dueno: '', contacto: '', raza: '', señas: '', foto: '', direccion: '' });
+  
+    try {
+      let finalUsuarioId = nueva.usuario_id;
+  
+      // ESCENARIO A: Es un dueño nuevo (no se seleccionó de la lista)
+      if (!finalUsuarioId) {
+        console.log("Registrando nuevo dueño...");
+        const resUser = await axios.post('https://api-qrplacas.onrender.com/api/usuarios', {
+          nombre_completo: nueva.dueno,
+          contacto: nueva.contacto,
+          direccion: nueva.direccion,
+          rol: 'cliente',
+          password: '123' // Contraseña temporal
+        });
+        finalUsuarioId = resUser.data.id;
+      }
+  
+      // ESCENARIO B: Ya tenemos el ID (sea nuevo o recuperado del autocompletado)
+      const mascotaParaGuardar = {
+        ...nueva,
+        usuario_id: finalUsuarioId
+      };
+  
+      // Llamamos a la función que ya tienes en App.jsx
+      await agregarMascota(mascotaParaGuardar);
+  
+      // Limpiamos todo
+      setMostrarForm(false);
+      setNueva({ 
+        nombre: '', 
+        dueno: '', 
+        contacto: '', 
+        raza: '', 
+        especie: 'perro', 
+        foto: '', 
+        direccion: '', 
+        usuario_id: null 
+      });
+      setSugerencias([]); // Limpia la lista de búsqueda
+  
+    } catch (error) {
+      console.error("Error en el flujo de registro:", error);
+      // Aquí podrías usar tu función notify() si la tienes disponible
+    }
   };
 
   // Función para dar estilo a los badges de estado
@@ -288,7 +346,51 @@ const GestionView = ({ mascotas, agregarMascota, eliminarMascota, setSeleccionad
           </select>
         </div>
 
-        <input placeholder="Nombre del Dueño" required style={inputStyle} value={nueva.dueno} onChange={e => setNueva({...nueva, dueno: e.target.value})} />
+        <div style={{ position: 'relative' }}>
+  <input 
+    placeholder="Nombre del Dueño" 
+    required 
+    style={inputStyle} 
+    value={nueva.dueno} 
+    onChange={e => buscarDueño(e.target.value)} 
+    onBlur={() => setTimeout(() => setSugerencias([]), 200)} // Retraso para permitir el click
+  />
+  
+  {/* LISTA DE SUGERENCIAS */}
+  {sugerencias.length > 0 && (
+    <div style={{
+      position: 'absolute', top: '100%', left: 0, right: 0, 
+      backgroundColor: 'white', zIndex: 10, borderRadius: '10px',
+      boxShadow: '0 10px 15px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0',
+      maxHeight: '150px', overflowY: 'auto'
+    }}>
+      {sugerencias.map(u => (
+        <div 
+          key={u.id}
+          onClick={() => {
+            setNueva({ 
+              ...nueva, 
+              dueno: u.nombre_completo, 
+              contacto: u.contacto || '', 
+              direccion: u.direccion || '',
+              usuario_id: u.id // <--- Guardamos el ID existente
+            });
+            setUsuarioSeleccionado(u.id);
+            setSugerencias([]);
+          }}
+          style={{ padding: '10px', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', fontSize: '13px' }}
+          onMouseEnter={e => e.target.style.backgroundColor = '#f8fafc'}
+          onMouseLeave={e => e.target.style.backgroundColor = 'white'}
+        >
+          👤 {u.nombre_completo}
+        </div>
+      ))}
+    </div>
+  )}
+</div>
+
+<input placeholder="Teléfono" required style={inputStyle} value={nueva.contacto} onChange={e => setNueva({...nueva, contacto: e.target.value})} />
+<input placeholder="Dirección" required style={inputStyle} value={nueva.direccion} onChange={e => setNueva({...nueva, direccion: e.target.value})} />
         <input placeholder="Teléfono" required style={inputStyle} value={nueva.contacto} onChange={e => setNueva({...nueva, contacto: e.target.value})} />
         <input placeholder="Dirección" required style={inputStyle} value={nueva.direccion} onChange={e => setNueva({...nueva, direccion: e.target.value})} />
         
