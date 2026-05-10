@@ -18,6 +18,7 @@ const LoginView = ({ onLogin }) => {
 
       if (response.data.success) {
         // 'datos' ahora incluirá { id, nombre, rol }
+        console.log("rESPPPSONDE"+response.data.user);
         onLogin(response.data.user);
       }
     } catch (err) {
