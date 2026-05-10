@@ -100,21 +100,25 @@ const GestionView = ({ mascotas, agregarMascota, eliminarMascota, setSeleccionad
     return matchNombre && matchDueno && matchImpreso && matchEstado;
   });
 
-  const buscarDueño = async (texto) => {
-    // Si el usuario borra o escribe algo nuevo, reseteamos el ID seleccionado
-    setNueva({ ...nueva, dueno: texto, usuario_id: null }); 
-    
-    if (texto.length > 2) {
-      try {
-        const res = await axios.get(`https://api-qrplacas.onrender.com/api/usuarios/buscar?q=${texto}`);
-        setSugerencias(res.data);
-      } catch (err) {
-        console.error(err);
-      }
+  const buscarDueño = (texto) => {
+    setNueva({ ...nueva, dueno: texto, usuario_id: null });
+  
+    if (texto.length > 1) {
+      // Filtramos localmente en la lista de dueños conocidos
+      const filtrados = dueñosExistentes.filter(d => 
+        d.dueno.toLowerCase().includes(texto.toLowerCase())
+      );
+      setSugerencias(filtrados);
     } else {
       setSugerencias([]);
     }
   };
+
+  // Obtenemos nombres únicos de los dueños que ya están en el sistema
+const dueñosExistentes = [...new Set(mascotas.map(m => m.dueno))].map(nombre => {
+    // Buscamos el primer registro que coincida para obtener sus datos
+    return mascotas.find(m => m.dueno === nombre);
+  });
 
   const manejarArchivo = (e) => {
     const file = e.target.files[0];
@@ -352,40 +356,53 @@ const GestionView = ({ mascotas, agregarMascota, eliminarMascota, setSeleccionad
     required 
     style={inputStyle} 
     value={nueva.dueno} 
-    onChange={e => buscarDueño(e.target.value)} 
-    onBlur={() => setTimeout(() => setSugerencias([]), 200)} // Retraso para permitir el click
+    onChange={e => buscarDueño(e.target.value)}
+    onBlur={() => setTimeout(() => setSugerencias([]), 250)} // Delay para captar el click
   />
-  
-  {/* LISTA DE SUGERENCIAS */}
+
+  {/* MENU DE SUGERENCIAS */}
   {sugerencias.length > 0 && (
-    <div style={{
-      position: 'absolute', top: '100%', left: 0, right: 0, 
-      backgroundColor: 'white', zIndex: 10, borderRadius: '10px',
-      boxShadow: '0 10px 15px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0',
-      maxHeight: '150px', overflowY: 'auto'
+    <ul style={{
+      position: 'absolute',
+      top: '100%',
+      left: 0,
+      right: 0,
+      backgroundColor: 'white',
+      border: '1px solid #e2e8f0',
+      borderRadius: '12px',
+      boxShadow: '0 10px 15px rgba(0,0,0,0.1)',
+      zIndex: 100,
+      listStyle: 'none',
+      padding: '5px 0',
+      margin: '4px 0 0 0'
     }}>
-      {sugerencias.map(u => (
-        <div 
-          key={u.id}
+      {sugerencias.map(s => (
+        <li 
+          key={s.id}
           onClick={() => {
             setNueva({ 
               ...nueva, 
-              dueno: u.nombre_completo, 
-              contacto: u.contacto || '', 
-              direccion: u.direccion || '',
-              usuario_id: u.id // <--- Guardamos el ID existente
+              dueno: s.dueno, 
+              contacto: s.contacto, 
+              direccion: s.direccion,
+              usuario_id: s.usuario_id // Vinculamos el ID automáticamente
             });
-            setUsuarioSeleccionado(u.id);
             setSugerencias([]);
           }}
-          style={{ padding: '10px', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', fontSize: '13px' }}
-          onMouseEnter={e => e.target.style.backgroundColor = '#f8fafc'}
+          style={{
+            padding: '10px 15px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            color: '#1e293b',
+            transition: 'background 0.2s'
+          }}
+          onMouseEnter={e => e.target.style.backgroundColor = '#f1f5f9'}
           onMouseLeave={e => e.target.style.backgroundColor = 'white'}
         >
-          👤 {u.nombre_completo}
-        </div>
+          👤 {s.dueno}
+        </li>
       ))}
-    </div>
+    </ul>
   )}
 </div>
 
