@@ -15,8 +15,26 @@ function App() {
   const [seleccionada, setSeleccionada] = useState(null);
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   
+
+  
   // Cambiamos el booleano por el objeto usuario
-  const [usuario, setUsuario] = useState(null);
+  const [usuario, setUsuario] = useState(() => {
+    const sesionGuardada = localStorage.getItem('usuario_petid');
+    return sesionGuardada ? JSON.parse(sesionGuardada) : null;
+  });
+
+  const loginExitoso = (datos) => {
+    setUsuario(datos);
+    // Guardamos en el navegador (se queda ahí aunque cierres la pestaña)
+    localStorage.setItem('usuario_petid', JSON.stringify(datos));
+  };
+
+  const cerrarSesion = () => {
+    setUsuario(null);
+    localStorage.removeItem('usuario_petid');
+    // Opcional: limpiar otros estados
+    setMascotas([]);
+  };
 
   const notify = (msg, type = "success") => {
     toast[type](msg, {
@@ -152,7 +170,7 @@ function App() {
   }
 
   if (!usuario) {
-    return <LoginView onLogin={(datos) => setUsuario(datos)} />;
+    return <LoginView onLogin={loginExitoso} />;
   }
 
   return (
@@ -169,7 +187,7 @@ function App() {
           eliminarMascota={eliminarMascota}
           marcarComoImpreso={marcarComoImpreso}
           actualizarEstado={actualizarEstado}
-          onLogout={() => setUsuario(null)}
+          onLogout={cerrarSesion}
         />
       ) : (
         <ClienteView 
@@ -177,7 +195,7 @@ function App() {
           // CAMBIO: Ahora filtramos por ID para que sea infalible
           mascotas={mascotas.filter(m => m.usuario_id === usuario.id)}
           actualizarEstado={actualizarEstado}
-          onLogout={() => setUsuario(null)}
+          oonLogout={cerrarSesion}
           // IMPORTANTE: Pasamos estas dos para que el modal funcione en la vista cliente
           seleccionada={seleccionada}
           setSeleccionada={setSeleccionada}
