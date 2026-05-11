@@ -24,7 +24,7 @@ function RecenterMap({ coords }) {
 }
 
 const AdminRastreo = () => {
-  const [unidades] = useState(["SIN_NOMBRE"]); // Lista de conductores/unidades
+  const [unidades] = useState(["PRUEBA_MOVIL_5S"]); // Lista de conductores/unidades
   const [seleccionada, setSeleccionada] = useState("");
   const [puntos, setPuntos] = useState([]); // [[lat, lng], [lat, lng]...]
 
