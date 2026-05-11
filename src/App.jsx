@@ -174,7 +174,7 @@ function App() {
     return <RastreadorPublico />;
   }
   if (currentPath === '/monitoreo') {
-    return <RastreadorPublico />;
+    return <AdminRastreo />;
   }
 
   if (!usuario) {
