@@ -5,6 +5,7 @@ import DashboardView from './DashboardView'
 import LoginView from './LoginView'
 import ClienteView from './ClienteView' // <-- Asegúrate de crear este archivo
 import RastreadorPublico  from './RastreadorPublico'
+import AdminRastreo from './AdminRastreo'
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -170,6 +171,9 @@ function App() {
     return <ScanView mascotas={mascotas} />;
   }
   if (currentPath === '/rastreo') {
+    return <RastreadorPublico />;
+  }
+  if (currentPath === '/monitoreo') {
     return <RastreadorPublico />;
   }
 
