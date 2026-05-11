@@ -3,12 +3,12 @@ import axios from 'axios';
 
 const RastreadorPublico = () => {
   const [tracking, setTracking] = useState(false);
-  const [logs, setLogs] = useState([]); // Lista de envíos exitosos
+  const [logs, setLogs] = useState([]); 
   const [error, setError] = useState(null);
   const [ultimaPos, setUltimaPos] = useState({ lat: null, lng: null });
   
-  // Referencia para tener siempre el estado actualizado dentro del watchPosition
   const logsRef = useRef([]);
+  const intervalRef = useRef(null); // Para controlar los 5 segundos
 
   const agregarLog = (mensaje) => {
     const nuevoLog = {
@@ -16,61 +16,71 @@ const RastreadorPublico = () => {
       hora: new Date().toLocaleTimeString(),
       msg: mensaje
     };
-    // Guardamos solo los últimos 10 para no saturar la pantalla
     const actualizados = [nuevoLog, ...logsRef.current].slice(0, 10);
     logsRef.current = actualizados;
     setLogs(actualizados);
   };
 
-  const enviarUbicacion = async (position) => {
-    const { latitude, longitude, accuracy } = position.coords;
-    setUltimaPos({ lat: latitude, lng: longitude });
-
-    try {
-      // Intentamos enviar al backend
-      await axios.post('https://api-qrplacas.onrender.com/api/rastreo-prueba', {
-        unidad: "PRUEBA_MOVIL",
-        lat: latitude,
-        lng: longitude,
-        precision: accuracy
-      });
-      
-      agregarLog(`✅ Enviado: ${latitude.toFixed(5)}, ${longitude.toFixed(5)} (Precisión: ${accuracy.toFixed(1)}m)`);
-    } catch (err) {
-      agregarLog(`❌ Error de red: ${err.message}`);
+  const obtenerYEnviarUbicacion = () => {
+    if (!navigator.geolocation) {
+      setError("Tu navegador no soporta GPS.");
+      return;
     }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude, accuracy } = position.coords;
+        setUltimaPos({ lat: latitude, lng: longitude });
+
+        try {
+          await axios.post('https://api-qrplacas.onrender.com/api/rastreo-prueba', {
+            unidad: "PRUEBA_MOVIL_5S",
+            lat: latitude,
+            lng: longitude,
+            precision: accuracy
+          });
+          
+          agregarLog(`✅ Enviado (5s): ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
+        } catch (err) {
+          agregarLog(`❌ Error de red: ${err.message}`);
+        }
+      },
+      (err) => {
+        setError(err.message);
+        agregarLog(`⚠️ Error GPS: ${err.message}`);
+      },
+      { 
+        enableHighAccuracy: true, 
+        timeout: 10000, 
+        maximumAge: 0 
+      }
+    );
   };
 
   useEffect(() => {
-    let watchId = null;
-
     if (tracking) {
-      if ("geolocation" in navigator) {
-        agregarLog("🚀 Rastreo iniciado...");
-        watchId = navigator.geolocation.watchPosition(
-          enviarUbicacion,
-          (err) => {
-            setError(err.message);
-            agregarLog(`⚠️ Error GPS: ${err.message}`);
-          },
-          { 
-            enableHighAccuracy: true, 
-            timeout: 15000, 
-            maximumAge: 0 
-          }
-        );
-      } else {
-        setError("Tu navegador no soporta GPS.");
+      agregarLog("🚀 Rastreo programado cada 5s...");
+      
+      // Intentar mantener la pantalla encendida (WakeLock)
+      if ('wakeLock' in navigator) {
+        navigator.wakeLock.request('screen').catch(() => {
+          console.log("WakeLock no disponible");
+        });
       }
+
+      // Ejecutar inmediatamente y luego cada 5 segundos
+      obtenerYEnviarUbicacion();
+      intervalRef.current = setInterval(obtenerYEnviarUbicacion, 5000);
+      
     } else {
-      if (watchId) {
-        navigator.geolocation.clearWatch(watchId);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
         agregarLog("🛑 Rastreo detenido.");
       }
     }
 
     return () => {
-      if (watchId) navigator.geolocation.clearWatch(watchId);
+      if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [tracking]);
 
@@ -79,9 +89,8 @@ const RastreadorPublico = () => {
       padding: '20px', maxWidth: '500px', margin: '0 auto', 
       fontFamily: 'sans-serif', backgroundColor: '#f8fafc', minHeight: '100vh' 
     }}>
-      <h2 style={{ textAlign: 'center', color: '#1e293b' }}>🛰️ Monitor de Ruta</h2>
+      <h2 style={{ textAlign: 'center', color: '#1e293b' }}>🛰️ Monitor de Ruta (5s)</h2>
       
-      {/* BOTÓN PRINCIPAL */}
       <button 
         onClick={() => setTracking(!tracking)}
         style={{
@@ -94,7 +103,6 @@ const RastreadorPublico = () => {
         {tracking ? "DETENER TRANSMISIÓN" : "INICIAR TRANSMISIÓN"}
       </button>
 
-      {/* COORDENADAS ACTUALES */}
       <div style={{ 
         backgroundColor: 'white', padding: '15px', borderRadius: '12px', 
         border: '1px solid #e2e8f0', marginBottom: '20px', textAlign: 'center'
@@ -105,7 +113,6 @@ const RastreadorPublico = () => {
         </p>
       </div>
 
-      {/* LOG DE ACTIVIDAD EN PANTALLA */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         <p style={{ fontSize: '14px', fontWeight: 'bold', color: '#475569', margin: '0 0 5px 5px' }}>Historial de envíos (Últimos 10):</p>
         {logs.map(log => (
