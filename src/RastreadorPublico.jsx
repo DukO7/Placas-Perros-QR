@@ -26,16 +26,23 @@ const RastreadorPublico = () => {
       setError("Tu navegador no soporta GPS.");
       return;
     }
-
+  
+    // Definimos las opciones fuera para que sea más claro
+    const opcionesGps = { 
+      enableHighAccuracy: true, 
+      timeout: 10000, 
+      maximumAge: 0 
+    };
+  
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude, accuracy } = position.coords;
         setUltimaPos({ lat: latitude, lng: longitude });
-
+  
         try {
           await axios.post('https://api-qrplacas.onrender.com/api/rastreo-prueba', {
-            conductor_id: 1, // ID fijo para la prueba
-  unidad: "PRUEBA_MOVIL_5S",
+            conductor_id: 1,
+            unidad: "PRUEBA_MOVIL_5S",
             lat: latitude,
             lng: longitude,
             precision: accuracy
@@ -50,14 +57,9 @@ const RastreadorPublico = () => {
         setError(err.message);
         agregarLog(`⚠️ Error GPS: ${err.message}`);
       },
-      { 
-        enableHighAccuracy: true, 
-        timeout: 10000, 
-        maximumAge: 0 
-      }
+      opcionesGps // <--- ¡Asegúrate de que este sea el tercer argumento!
     );
   };
-
   useEffect(() => {
     if (tracking) {
       agregarLog("🚀 Rastreo programado cada 5s...");
