@@ -35,21 +35,27 @@ const AdminRastreo = () => {
   
     // 2. Ahora recibimos el ID como parámetro
     const cargarHistorial = async (id, nombre) => {
-      try {
-        // Enviamos el ID numérico en la URL para evitar el error 22P02
-        const res = await axios.get(`https://api-qrplacas.onrender.com/api/historial/${id}`);
-        
-        const ruta = res.data.map(p => [
-          parseFloat(p.latitud), 
-          parseFloat(p.longitud)
-        ]);
-        
-        setPuntos(ruta);
-        setSeleccionada(nombre); // Guardamos el nombre solo para mostrarlo en el título
-      } catch (err) {
-        console.error("Error cargando ruta:", err);
-      }
-    };
+        try {
+          // 1. Usamos la nueva ruta única
+          const res = await axios.get(`https://api-qrplacas.onrender.com/api/gps/historial/${id}`);
+          
+          // 2. Filtramos y convertimos con seguridad
+          const rutaValida = res.data
+            .map(p => [parseFloat(p.latitud), parseFloat(p.longitud)])
+            .filter(p => !isNaN(p[0]) && !isNaN(p[1])); // Solo dejamos puntos válidos
+      
+          if (rutaValida.length === 0) {
+            alert("No hay puntos de recorrido válidos para esta unidad.");
+            setPuntos([]);
+            return;
+          }
+      
+          setPuntos(rutaValida);
+          setSeleccionada(nombre);
+        } catch (err) {
+          console.error("Error cargando ruta:", err);
+        }
+      };
 
   return (
     <div style={{ padding: '20px', display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
