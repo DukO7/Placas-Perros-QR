@@ -34,7 +34,8 @@ const RastreadorPublico = () => {
 
         try {
           await axios.post('https://api-qrplacas.onrender.com/api/rastreo-prueba', {
-            unidad: "PRUEBA_MOVIL_5S",
+            conductor_id: 1, // ID fijo para la prueba
+  unidad: "PRUEBA_MOVIL_5S",
             lat: latitude,
             lng: longitude,
             precision: accuracy

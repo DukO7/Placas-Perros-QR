@@ -24,20 +24,32 @@ function RecenterMap({ coords }) {
 }
 
 const AdminRastreo = () => {
-  const [unidades] = useState(["PRUEBA_MOVIL_5S"]); // Lista de conductores/unidades
-  const [seleccionada, setSeleccionada] = useState("");
-  const [puntos, setPuntos] = useState([]); // [[lat, lng], [lat, lng]...]
-
-  const cargarHistorial = async (unidad) => {
-    try {
-      const res = await axios.get(`https://api-qrplacas.onrender.com/api/historial/${unidad}`);
-      const ruta = res.data.map(p => [parseFloat(p.latitud), parseFloat(p.longitud)]);
-      setPuntos(ruta);
-      setSeleccionada(unidad);
-    } catch (err) {
-      console.error("Error cargando ruta");
-    }
-  };
+    // 1. Cambiamos la lista por objetos con ID numérico
+    const [unidades] = useState([
+      { id: 1, nombre: "PRUEBA_MOVIL_5S" }
+      // Aquí puedes añadir más: { id: 2, nombre: "PATRULLA_02" }
+    ]);
+    
+    const [seleccionada, setSeleccionada] = useState("");
+    const [puntos, setPuntos] = useState([]);
+  
+    // 2. Ahora recibimos el ID como parámetro
+    const cargarHistorial = async (id, nombre) => {
+      try {
+        // Enviamos el ID numérico en la URL para evitar el error 22P02
+        const res = await axios.get(`https://api-qrplacas.onrender.com/api/historial/${id}`);
+        
+        const ruta = res.data.map(p => [
+          parseFloat(p.latitud), 
+          parseFloat(p.longitud)
+        ]);
+        
+        setPuntos(ruta);
+        setSeleccionada(nombre); // Guardamos el nombre solo para mostrarlo en el título
+      } catch (err) {
+        console.error("Error cargando ruta:", err);
+      }
+    };
 
   return (
     <div style={{ padding: '20px', display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
