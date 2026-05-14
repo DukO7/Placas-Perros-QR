@@ -64,20 +64,33 @@ const AdminRastreo = () => {
             </tr>
           </thead>
           <tbody>
-            {unidades.map(u => (
-              <tr key={u} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                <td style={{ padding: '10px', fontSize: '14px' }}>{u}</td>
-                <td style={{ padding: '10px', textAlign: 'right' }}>
-                  <button 
-                    onClick={() => cargarHistorial(u)}
-                    style={{ backgroundColor: '#2563eb', color: 'white', border: 'none', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer' }}
-                  >
-                    Ver Ruta
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
+  {unidades.map((u) => (
+    // 1. Usamos u.id como key en lugar del objeto u
+    <tr key={u.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+      <td style={{ padding: '10px', fontSize: '14px' }}>
+        {/* 2. Mostramos el nombre específicamente */}
+        <b>{u.nombre}</b> <br/>
+        <small style={{ color: '#94a3b8' }}>ID: {u.id}</small>
+      </td>
+      <td style={{ padding: '10px', textAlign: 'right' }}>
+        <button 
+          // 3. Pasamos el id y el nombre por separado a la función
+          onClick={() => cargarHistorial(u.id, u.nombre)}
+          style={{ 
+            backgroundColor: '#2563eb', 
+            color: 'white', 
+            border: 'none', 
+            padding: '5px 12px', 
+            borderRadius: '6px', 
+            cursor: 'pointer' 
+          }}
+        >
+          Ver Ruta
+        </button>
+      </td>
+    </tr>
+  ))}
+</tbody>
         </table>
         {puntos.length > 0 && (
           <p style={{ fontSize: '12px', color: '#64748b', marginTop: '15px' }}>
