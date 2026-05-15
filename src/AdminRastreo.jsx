@@ -31,10 +31,24 @@ const AdminRastreo = () => {
     const grupos = [];
     let grupoActual = [];
     let inicioBloque = new Date(datos[0].fecha_hora);
+    let distanciaAcumulada = 0; // <--- Nueva variable
 
     datos.forEach((p, index) => {
       const fechaPunto = new Date(p.fecha_hora);
+      const lat = parseFloat(p.latitud);
+      const lng = parseFloat(p.longitud);
+
+      // Sumar distancia con el punto anterior si existe dentro del mismo grupo
+      if (grupoActual.length > 0) {
+        const lastP = grupoActual[grupoActual.length - 1];
+        distanciaAcumulada += calcularDistancia(
+          parseFloat(lastP.latitud), parseFloat(lastP.longitud),
+          lat, lng
+        );
+      }
+
       const diferenciaHoras = (fechaPunto - inicioBloque) / (1000 * 60 * 60);
+      
       if (diferenciaHoras < 1) {
         grupoActual.push(p);
       } else {
@@ -42,19 +56,34 @@ const AdminRastreo = () => {
           inicio: inicioBloque.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           fin: fechaPunto.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           puntos: grupoActual.map(pt => [parseFloat(pt.latitud), parseFloat(pt.longitud)]),
+          km: distanciaAcumulada.toFixed(2) // <--- Guardamos km del tramo
         });
         grupoActual = [p];
         inicioBloque = fechaPunto;
+        distanciaAcumulada = 0; // Reiniciamos para la siguiente hora
       }
+
       if (index === datos.length - 1) {
         grupos.push({
           inicio: inicioBloque.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           fin: fechaPunto.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           puntos: grupoActual.map(pt => [parseFloat(pt.latitud), parseFloat(pt.longitud)]),
+          km: distanciaAcumulada.toFixed(2)
         });
       }
     });
     return grupos.reverse();
+  };
+
+  const calcularDistancia = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Radio de la Tierra en km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Resultado en km
   };
 
   const cargarHistorial = async (id) => {
@@ -155,25 +184,32 @@ const AdminRastreo = () => {
                 <tr>
                   <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e2e8f0' }}>Bloque Horario</th>
                   <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e2e8f0' }}>Puntos</th>
+                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e2e8f0' }}>Distancia (Km)</th>
                   <th style={{ padding: '12px', textAlign: 'right', borderBottom: '1px solid #e2e8f0' }}>Acción</th>
                 </tr>
               </thead>
               <tbody>
-                {tramos.map((t, i) => (
-                  <tr key={i} style={{ backgroundColor: tramoActivoIndex === i ? '#eff6ff' : 'transparent' }}>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #f1f5f9' }}>{t.inicio} - {t.fin}</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #f1f5f9' }}>{t.puntos.length}</td>
-                    <td style={{ padding: '10px', borderBottom: '1px solid #f1f5f9', textAlign: 'right' }}>
-                      <button 
-                        onClick={() => verTramo(i, t.puntos)}
-                        style={{ padding: '5px 10px', backgroundColor: tramoActivoIndex === i ? '#1e40af' : '#f1f5f9', color: tramoActivoIndex === i ? 'white' : '#475569', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                      >
-                        Ver
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+  {tramos.map((t, i) => (
+    <tr key={i} style={{ backgroundColor: tramoActivoIndex === i ? '#eff6ff' : 'transparent' }}>
+      <td style={{ padding: '10px', borderBottom: '1px solid #f1f5f9' }}>{t.inicio} - {t.fin}</td>
+      <td style={{ padding: '10px', borderBottom: '1px solid #f1f5f9' }}>{t.puntos.length}</td>
+      
+      {/* AGREGA ESTA LÍNEA - Aquí es donde se muestra el cálculo que hicimos */}
+      <td style={{ padding: '10px', borderBottom: '1px solid #f1f5f9' }}>
+        <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{t.km} km</span>
+      </td>
+
+      <td style={{ padding: '10px', borderBottom: '1px solid #f1f5f9', textAlign: 'right' }}>
+        <button 
+          onClick={() => verTramo(i, t.puntos)}
+          style={{ padding: '5px 10px', backgroundColor: tramoActivoIndex === i ? '#1e40af' : '#f1f5f9', color: tramoActivoIndex === i ? 'white' : '#475569', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+        >
+          Ver
+        </button>
+      </td>
+    </tr>
+  ))}
+</tbody>
             </table>
           </div>
         </div>
