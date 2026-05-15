@@ -12,7 +12,7 @@ function RecenterMap({ coords }) {
   const map = useMap();
   useEffect(() => {
     if (coords.length > 1) {
-      map.fitBounds(coords, { padding: [30, 30] });
+      map.fitBounds(coords, { padding: [40, 40] });
     }
   }, [coords]);
   return null;
@@ -22,9 +22,10 @@ const AdminRastreo = () => {
   const [unidades] = useState([{ id: 1, nombre: "PRUEBA_MOVIL_5S" }]);
   const [fechaDesde, setFechaDesde] = useState(new Date(Date.now() - 864e5).toISOString().split('T')[0]);
   const [fechaHasta, setFechaHasta] = useState(new Date().toISOString().split('T')[0]);
+  
   const [tramos, setTramos] = useState([]);
-  const [puntosVisualizados, setPuntosVisualizados] = useState([]);
-  const [tramoActivoIndex, setTramoActivoIndex] = useState(null);
+  const [indicesSeleccionados, setIndicesSeleccionados] = useState([]); // Array para múltiples filas
+  const [puntosMapa, setPuntosMapa] = useState([]); // Puntos acumulados
 
   const calcularDistancia = (lat1, lon1, lat2, lon2) => {
     const R = 6371;
@@ -42,34 +43,31 @@ const AdminRastreo = () => {
     let distanciaAcumulada = 0;
 
     datos.forEach((p, index) => {
-      const fechaPunto = new Date(p.fecha_hora);
       const lat = parseFloat(p.latitud);
       const lng = parseFloat(p.longitud);
-
       if (grupoActual.length > 0) {
         const lastP = grupoActual[grupoActual.length - 1];
         distanciaAcumulada += calcularDistancia(parseFloat(lastP.latitud), parseFloat(lastP.longitud), lat, lng);
       }
-
-      const diferenciaHoras = (fechaPunto - inicioBloque) / (1000 * 60 * 60);
+      const diferenciaHoras = (new Date(p.fecha_hora) - inicioBloque) / (1000 * 60 * 60);
+      
       if (diferenciaHoras < 1) {
         grupoActual.push(p);
       } else {
         grupos.push({
           inicio: inicioBloque.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          fin: fechaPunto.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          fin: new Date(p.fecha_hora).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           puntos: grupoActual.map(pt => [parseFloat(pt.latitud), parseFloat(pt.longitud)]),
           km: distanciaAcumulada.toFixed(2)
         });
         grupoActual = [p];
-        inicioBloque = fechaPunto;
+        inicioBloque = new Date(p.fecha_hora);
         distanciaAcumulada = 0;
       }
-
       if (index === datos.length - 1) {
         grupos.push({
           inicio: inicioBloque.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          fin: fechaPunto.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          fin: new Date(p.fecha_hora).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           puntos: grupoActual.map(pt => [parseFloat(pt.latitud), parseFloat(pt.longitud)]),
           km: distanciaAcumulada.toFixed(2)
         });
@@ -82,117 +80,119 @@ const AdminRastreo = () => {
     try {
       const res = await axios.get(`https://api-qrplacas.onrender.com/api/gps/historial/${id}`);
       const datosFiltrados = res.data.filter(p => {
-        const fechaPunto = p.fecha_hora.split('T')[0];
-        return fechaPunto >= fechaDesde && fechaPunto <= fechaHasta;
+        const f = p.fecha_hora.split('T')[0];
+        return f >= fechaDesde && f <= fechaHasta;
       });
-      const tramosProcesados = procesarTramos(datosFiltrados);
-      setTramos(tramosProcesados);
-      // RESET: Al analizar, limpiamos la selección previa del mapa
-      setTramoActivoIndex(null);
-      setPuntosVisualizados([]);
-    } catch (err) {
-      console.error(err);
-    }
+      setTramos(procesarTramos(datosFiltrados));
+      setIndicesSeleccionados([]); // Limpiar selección al cambiar unidad
+      setPuntosMapa([]);
+    } catch (err) { console.error(err); }
   };
 
-  const verTramo = (index, pts) => {
-    // Si ya está seleccionado, lo ocultamos (Toggle)
-    if (tramoActivoIndex === index) {
-      setTramoActivoIndex(null);
-      setPuntosVisualizados([]);
+  const toggleTramo = (index) => {
+    let nuevasSelecciones;
+    if (indicesSeleccionados.includes(index)) {
+      nuevasSelecciones = indicesSeleccionados.filter(i => i !== index);
     } else {
-      setTramoActivoIndex(index);
-      setPuntosVisualizados(pts);
+      nuevasSelecciones = [...indicesSeleccionados, index];
     }
+    
+    setIndicesSeleccionados(nuevasSelecciones);
+
+    // Unimos todos los puntos de los tramos seleccionados respetando el orden cronológico
+    // Ordenamos las selecciones para que el trazado no salte aleatoriamente
+    const puntosUnidos = nuevasSelecciones
+      .sort((a, b) => b - a) // Invertido porque los tramos están en reverse()
+      .flatMap(idx => tramos[idx].puntos);
+    
+    setPuntosMapa(puntosUnidos);
   };
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: '#f8fafc', fontFamily: 'sans-serif' }}>
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: '#f1f5f9', fontFamily: 'sans-serif' }}>
       
       {/* HEADER */}
-      <div style={{ padding: '15px 25px', backgroundColor: 'white', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2 style={{ margin: 0, color: '#1e293b' }}>📍 Panel de Monitoreo</h2>
-        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-          <div>
-            <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', color: '#64748b' }}>DESDE</label>
-            <input type="date" value={fechaDesde} onChange={(e) => setFechaDesde(e.target.value)} style={{border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px'}}/>
-          </div>
-          <div>
-            <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', color: '#64748b' }}>HASTA</label>
-            <input type="date" value={fechaHasta} onChange={(e) => setFechaHasta(e.target.value)} style={{border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px'}}/>
-          </div>
+      <div style={{ padding: '12px 25px', backgroundColor: 'white', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h2 style={{ fontSize: '20px', color: '#1e293b' }}>📍 Monitoreo Municipal</h2>
+        <div style={{ display: 'flex', gap: '15px' }}>
+          <input type="date" value={fechaDesde} onChange={(e) => setFechaDesde(e.target.value)} style={{padding: '5px', borderRadius: '4px', border: '1px solid #cbd5e1'}} />
+          <input type="date" value={fechaHasta} onChange={(e) => setFechaHasta(e.target.value)} style={{padding: '5px', borderRadius: '4px', border: '1px solid #cbd5e1'}} />
         </div>
       </div>
 
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden', padding: '15px', gap: '15px' }}>
         
-        {/* SIDEBAR */}
-        <div style={{ width: '250px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div style={{ flex: 1, backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', overflowY: 'auto', padding: '15px' }}>
-            <h4 style={{ marginTop: 0, fontSize: '14px', color: '#64748b' }}>UNIDADES ACTIVAS</h4>
-            {unidades.map(u => (
-              <div key={u.id} style={{ padding: '12px', border: '1px solid #f1f5f9', borderRadius: '8px', marginBottom: '8px', backgroundColor: '#fdfdfd' }}>
-                <div style={{ marginBottom: '8px', fontSize: '14px', fontWeight: 'bold' }}>{u.nombre}</div>
-                <button onClick={() => cargarHistorial(u.id)} style={{ width: '100%', padding: '8px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
-                  Analizar
-                </button>
-              </div>
-            ))}
-          </div>
+        {/* SIDEBAR UNIDADES */}
+        <div style={{ width: '240px', backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', padding: '15px', overflowY: 'auto' }}>
+          <h4 style={{ color: '#64748b', fontSize: '12px', marginBottom: '15px' }}>UNIDADES</h4>
+          {unidades.map(u => (
+            <div key={u.id} style={{ padding: '10px', backgroundColor: '#f8fafc', borderRadius: '8px', marginBottom: '10px', border: '1px solid #e2e8f0' }}>
+              <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>{u.nombre}</div>
+              <button onClick={() => cargarHistorial(u.id)} style={{ width: '100%', padding: '6px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Analizar</button>
+            </div>
+          ))}
         </div>
 
-        {/* CONTENEDOR DINÁMICO */}
+        {/* MAPA Y TABLA */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '15px', overflow: 'hidden' }}>
           
-          {/* MAPA CONDICIONAL */}
-          {puntosVisualizados.length > 0 ? (
-            <div style={{ height: '450px', backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', position: 'relative', transition: 'all 0.3s ease' }}>
-              <MapContainer center={[18.8497, -97.1036]} zoom={14} style={{ height: '100%', width: '100%' }}>
-                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                <Polyline positions={puntosVisualizados} color="#2563eb" weight={5} opacity={0.7} dashArray="1, 10" /> 
-                <Polyline positions={puntosVisualizados} color="#2563eb" weight={2} opacity={1} /> 
-                <Marker position={puntosVisualizados[0]} icon={iconInicio}><Popup>🏁 Inicio</Popup></Marker>
-                <Marker position={puntosVisualizados[puntosVisualizados.length - 1]} icon={iconFin}><Popup>🛑 Fin</Popup></Marker>
-                <RecenterMap coords={puntosVisualizados} />
-              </MapContainer>
-            </div>
-          ) : (
-            <div style={{ height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed #cbd5e1', borderRadius: '12px', color: '#94a3b8' }}>
-              Seleccione un tramo en la tabla para visualizar el mapa
-            </div>
-          )}
+          {/* MAPA DINÁMICO */}
+          <div style={{ height: puntosMapa.length > 0 ? '400px' : '0px', transition: 'height 0.4s ease', overflow: 'hidden', borderRadius: '12px', border: puntosMapa.length > 0 ? '1px solid #e2e8f0' : 'none' }}>
+            <MapContainer center={[18.8497, -97.1036]} zoom={14} style={{ height: '100%', width: '100%' }}>
+              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              {puntosMapa.length > 0 && (
+                <>
+                  <Polyline positions={puntosMapa} color="#2563eb" weight={5} opacity={0.6} dashArray="5, 10" />
+                  <Polyline positions={puntosMapa} color="#2563eb" weight={3} opacity={1} />
+                  <Marker position={puntosMapa[0]} icon={iconInicio}><Popup>Inicio del trayecto</Popup></Marker>
+                  <Marker position={puntosMapa[puntosMapa.length - 1]} icon={iconFin}><Popup>Posición final</Popup></Marker>
+                  <RecenterMap coords={puntosMapa} />
+                </>
+              )}
+            </MapContainer>
+          </div>
 
-          {/* TABLA TRAMOS */}
+          {/* TABLA DE TRAMOS */}
           <div style={{ flex: 1, backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', overflowY: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-              <thead style={{ position: 'sticky', top: 0, backgroundColor: '#f8fafc', zIndex: 1 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <thead style={{ position: 'sticky', top: 0, backgroundColor: '#f8fafc', zIndex: 10 }}>
                 <tr>
-                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e2e8f0', color: '#64748b' }}>BLOQUE HORARIO</th>
-                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e2e8f0', color: '#64748b' }}>PUNTOS</th>
-                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e2e8f0', color: '#64748b' }}>DISTANCIA</th>
-                  <th style={{ padding: '12px', textAlign: 'right', borderBottom: '1px solid #e2e8f0', color: '#64748b' }}>ACCIONES</th>
+                  <th style={{ padding: '12px', textAlign: 'center', width: '60px' }}>MOSTRAR</th>
+                  <th style={{ padding: '12px', textAlign: 'left' }}>HORARIO</th>
+                  <th style={{ padding: '12px', textAlign: 'left' }}>DISTANCIA</th>
+                  <th style={{ padding: '12px', textAlign: 'left' }}>PUNTOS</th>
                 </tr>
               </thead>
               <tbody>
-                {tramos.length > 0 ? tramos.map((t, i) => (
-                  <tr key={i} style={{ backgroundColor: tramoActivoIndex === i ? '#eff6ff' : 'transparent' }}>
-                    <td style={{ padding: '12px', borderBottom: '1px solid #f1f5f9' }}><b>{t.inicio}</b> a <b>{t.fin}</b></td>
-                    <td style={{ padding: '12px', borderBottom: '1px solid #f1f5f9' }}>{t.puntos.length} pts</td>
-                    <td style={{ padding: '12px', borderBottom: '1px solid #f1f5f9' }}><span style={{ color: '#059669', fontWeight: 'bold' }}>{t.km} km</span></td>
-                    <td style={{ padding: '12px', borderBottom: '1px solid #f1f5f9', textAlign: 'right' }}>
-                      <button 
-                        onClick={() => verTramo(i, t.puntos)}
-                        style={{ padding: '6px 16px', backgroundColor: tramoActivoIndex === i ? '#ef4444' : '#2563eb', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
-                      >
-                        {tramoActivoIndex === i ? "Ocultar Mapa" : "Ver en Mapa"}
-                      </button>
+                {tramos.map((t, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: indicesSeleccionados.includes(i) ? '#f0f9ff' : 'transparent' }}>
+                    <td style={{ textAlign: 'center', padding: '10px' }}>
+                      {/* ESTE ES EL SWITCH / TOGGLE */}
+                      <label style={{ position: 'relative', display: 'inline-block', width: '34px', height: '20px' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={indicesSeleccionados.includes(i)} 
+                          onChange={() => toggleTramo(i)} 
+                          style={{ opacity: 0, width: 0, height: 0 }}
+                        />
+                        <span style={{ 
+                          position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0, 
+                          backgroundColor: indicesSeleccionados.includes(i) ? '#2563eb' : '#ccc', 
+                          transition: '.4s', borderRadius: '20px' 
+                        }}>
+                          <span style={{ 
+                            position: 'absolute', height: '14px', width: '14px', left: '3px', bottom: '3px', 
+                            backgroundColor: 'white', transition: '.4s', borderRadius: '50%',
+                            transform: indicesSeleccionados.includes(i) ? 'translateX(14px)' : 'none'
+                          }}></span>
+                        </span>
+                      </label>
                     </td>
+                    <td style={{ padding: '12px' }}>{t.inicio} - {t.fin}</td>
+                    <td style={{ padding: '12px', fontWeight: 'bold', color: '#0369a1' }}>{t.km} km</td>
+                    <td style={{ padding: '12px', color: '#64748b' }}>{t.puntos.length} pts</td>
                   </tr>
-                )) : (
-                  <tr>
-                    <td colSpan="4" style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>No hay datos cargados. Use el botón "Analizar".</td>
-                  </tr>
-                )}
+                ))}
               </tbody>
             </table>
           </div>
