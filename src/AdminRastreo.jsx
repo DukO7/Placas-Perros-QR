@@ -20,7 +20,8 @@ function RecenterMap({ coords }) {
 
 const AdminRastreo = () => {
   const [unidades] = useState([{ id: 1, nombre: "PRUEBA_MOVIL_5S" }]);
-  const [fechaFiltro, setFechaFiltro] = useState(new Date().toISOString().split('T')[0]);
+  const [fechaDesde, setFechaDesde] = useState(new Date(Date.now() - 864e5).toISOString().split('T')[0]);
+  const [fechaHasta, setFechaHasta] = useState(new Date().toISOString().split('T')[0]);
   const [tramos, setTramos] = useState([]);
   const [puntosVisualizados, setPuntosVisualizados] = useState([]);
   const [tramoActivoIndex, setTramoActivoIndex] = useState(null);
@@ -60,7 +61,10 @@ const AdminRastreo = () => {
     try {
       const res = await axios.get(`https://api-qrplacas.onrender.com/api/gps/historial/${id}`);
       // Filtrar por fecha en el cliente (puedes hacerlo en el server después)
-      const datosFiltrados = res.data.filter(p => p.fecha_hora.startsWith(fechaFiltro));
+      const datosFiltrados = res.data.filter(p => {
+        const fechaPunto = p.fecha_hora.split('T')[0]; // O el formato que use tu DB
+        return fechaPunto >= fechaDesde && fechaPunto <= fechaHasta;
+      });
       const tramosProcesados = procesarTramos(datosFiltrados);
       setTramos(tramosProcesados);
       if (tramosProcesados.length > 0) verTramo(0, tramosProcesados[0].puntos);
@@ -80,15 +84,16 @@ const AdminRastreo = () => {
       {/* HEADER / FILTROS */}
       <div style={{ padding: '15px 25px', backgroundColor: 'white', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h2 style={{ margin: 0, color: '#1e293b' }}>📍 Panel de Monitoreo</h2>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Fecha:</label>
-          <input 
-            type="date" 
-            value={fechaFiltro} 
-            onChange={(e) => setFechaFiltro(e.target.value)}
-            style={{ padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-          />
-        </div>
+        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+  <div>
+    <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block' }}>Desde:</label>
+    <input type="date" value={fechaDesde} onChange={(e) => setFechaDesde(e.target.value)} />
+  </div>
+  <div>
+    <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block' }}>Hasta:</label>
+    <input type="date" value={fechaHasta} onChange={(e) => setFechaHasta(e.target.value)} />
+  </div>
+</div>
       </div>
 
       {/* CONTENIDO PRINCIPAL (Dashboard) */}
